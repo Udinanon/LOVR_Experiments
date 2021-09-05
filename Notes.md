@@ -67,3 +67,16 @@ Quaternions are cool but i need to wathc some more 3b1b now
 They represent rotations, so they have also an axis of rotation 
 you can also multiply a 3d vector by them and rotate it, if you mmultiply a cooridnate vector you get that vector rotated by that quaternion, or inversly that direction in the coordinate system define by the quaternion. Magic
 
+## Theater
+ 
+the basic is load a local pnh and place on some 3d box
+
+I want to then test some basics in moving the box around, maybe the pointer library could be useful
+
+next is loading images from interesting sources
+
+then we could test some audio reproduction
+
+The end goal is a 3D media room with mobile seating and screen and some basic media selection and playback control
+Should handle both video audio and images, from local sources and maybe something more
+

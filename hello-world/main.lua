@@ -1,4 +1,10 @@
-
+ -- draw boxCollider quickly
+local function drawBox(box, color)
+  local x, y, z = box:getPosition()
+  local dx, dy, dz = box:getShapeList()[1]:getDimensions()
+  lovr.graphics.setColor(color)
+  lovr.graphics.box('fill', x, y, z, dx, dy, dz, box:getOrientation())
+end
 
 
 -- run on boot of the program, where all the setup happes
@@ -10,7 +16,7 @@ function lovr.load()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
   -- generate the floor, Kinematic means infinite mass kinda
-  world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
+  ground = world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   -- cubes are the wireframe, boxes the physical ones
   boxes = {}
   cubes = {}
@@ -27,9 +33,10 @@ end
 function lovr.update(dt)
   -- update physics, like magic
   world:update(dt)
-  -- if right hand trigger is pressed
-  if lovr.headset.wasPressed("right", 'trigger') then
-    if State:isNormal() then
+
+  if state:isNormal() then
+    -- if right hand trigger is pressed
+    if lovr.headset.wasPressed("right", 'trigger') then
       -- create cube there with color and shift it slightly
       local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
       local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
@@ -48,15 +55,11 @@ function lovr.update(dt)
       else 
         table.insert(cubes, cube)
       end
-    elseif State["A"] then
-      
-    end
-  end 
+    end 
 
-  -- if left trigger is pressed
-  if lovr.headset.wasPressed("left", "trigger") then
-    if State:isNormal() then
-      -- generate a physics box there
+    -- if left trigger is pressed
+    if lovr.headset.wasPressed("left", "trigger") then
+        -- generate a physics box there
       local x, y, z = lovr.headset.getPosition("left")
       local box = world:newBoxCollider(x, y, z, .10)
       -- the velocity thing feels weird but tehre is no headset.getAccelleration
@@ -65,15 +68,15 @@ function lovr.update(dt)
       box:setLinearVelocity(vx, vy, vz)
       table.insert(boxes, box)
     end
-  end
 
-  -- when both grips are pressed, kinda finnicky but ok
-  if lovr.headset.wasPressed("left", 'grip') then
-      if lovr.headset.wasPressed("right", 'grip') then
-        -- remove all boxes and cubes
-        cubes = {}
-        boxes = {}
-    end 
+    -- when both grips are pressed, kinda finnicky but ok
+    if lovr.headset.wasPressed("left", 'grip') then
+        if lovr.headset.wasPressed("right", 'grip') then
+          -- remove all boxes and cubes
+          cubes = {}
+          boxes = {}
+      end 
+    end
   end
 
   if lovr.headset.wasPressed("right", "a") then
@@ -143,6 +146,10 @@ function lovr.draw()
 ---@diagnostic disable-next-line: deprecated
     lovr.graphics.cube("line", unpack(position))
   end
+
+  drawBox(ground, {.15, .15, .17})
+
+  
 end
 
 -- utility function for the rainbow thing
