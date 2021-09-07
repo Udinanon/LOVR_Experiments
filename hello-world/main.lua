@@ -25,12 +25,13 @@ function lovr.load()
 
   screen = nil
   --used to track if buttons were pressed
-  State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
+  State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false, ["LS"]=false, ["RS"]=false}
   function State:isNormal ()
     -- check uf no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
   canvas = lovr.graphics.newCanvas(4096, 4096, { stereo = false })
+  image = lovr.data.newImage("paris.jpg")
   material = lovr.graphics.newMaterial(canvas:getTexture())
 end
 
@@ -38,80 +39,24 @@ end
 function lovr.update(dt)
   -- update physics, like magic
   world:update(dt)
-  
-
-  if State:isNormal() then
-    -- if right hand trigger is pressed
-    if lovr.headset.wasPressed("right", 'trigger') then
-      -- create cube there with color and shift it slightly
-      local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
-      local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
-      local curr_color = shallowCopy(color)
-      local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
-      color[1] = color[1]+2
-      -- the th_x gives us multiple cube sizes
-      if th_x >= 0.75 then
-        cube["pos"][4]=.20
-        table.insert(cubes, cube)
-      elseif th_x <= -0.75 then
-        cube["pos"][4]=.05
-        table.insert(cubes, cube)
-      else 
-        table.insert(cubes, cube)
-      end
-    end 
-
-    -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "trigger") then
-        -- generate a physics box there
-      local hand_pos = {lovr.headset.getPosition("left")}
-      print("HANDPOS ",unpack(hand_pos))
-      local head_pos = vec3(lovr.headset.getPosition("head"))
-      print("HEADPOS ", head_pos)
-      local vision_vec = lovr.math.newQuat()
-      -- vision_vec:set(lovr.headset.getOrientation("head"))
-
-      local diff_vec = vec3(unpack(hand_pos)):sub(head_pos):normalize()
-      print("DIFFVEC", diff_vec)
-      local pos = vec3(unpack(hand_pos)):add(diff_vec:mul(1))
-      print("POS", pos)
-      vision_vec:set(diff_vec)
-      
-      screen = {["pos"] = {pos:unpack()}}
-      screen["rotation"] = {vision_vec:unpack()}
-      
-      canvas:renderTo(function()
-        lovr.graphics.clear()
-        lovr.graphics.setColor(1, 1, 1)
-        local fov = math.rad(67)
-        --local ortho = lovr.math.mat4():orthographic(2, 2, 2, 2, 0, -6)
-        lovr.graphics.setProjection(1, fov, fov, fov, fov)
-        lovr.graphics.setViewPose(1, 0, 0, 0, 0, 0, -1, 0)
-        local gatt_img = lovr.data.newImage("paris.jpg")
-        local max_dim = math.max(gatt_img:getDimensions())
-        local base_img = lovr.data.newImage(max_dim, max_dim)
-        --local clear_img = lovr.data.newImage(max_dim, max_dim)
-        base_img:paste(gatt_img)
-        local texture = lovr.graphics.newTexture(base_img)
-        lovr.graphics.fill(texture)
-      end)
-      
-      screen["material"] = material
-    end
-
+  if State["RS"] then
+    local head_pos = vec3(lovr.headset.getPosition("head"))
+    local vision_vec = lovr.math.newQuat()
+    vision_vec:set(lovr.headset.getOrientation("head")):normalize()
+    local plane_pos = head_pos:add((vision_vec:direction()):mul(2))
     
-    -- when both grips are pressed, kinda finnicky but ok
-    if lovr.headset.wasPressed("left", 'grip') then
-        if lovr.headset.wasPressed("right", 'grip') then
-          -- remove all boxes and cubes
-          cubes = {}
-          boxes = {}
-      end 
-    end
+    screen = {["pos"] = {plane_pos:unpack()}}
+    screen["rotation"] = {vision_vec:unpack()}    
+    screen["material"] = material
   end
 
-  if lovr.headset.wasPressed("right", "a") then
-    State["A"] = not State["A"]
+  if State:isNormal() then
+  end
+
+
+  if lovr.headset.wasPressed("right", "thumbstick") then
+    State["RS"] = not State["RS"]
+    updateCanvas(image)
   end
 end
 
@@ -240,4 +185,21 @@ function deepcopy(orig)
         copy = orig
     end
     return copy
+end
+
+function updateCanvas(image)
+    canvas:renderTo(function()
+      lovr.graphics.clear()
+      lovr.graphics.setColor(1, 1, 1)
+      local fov = math.rad(67)
+      --local ortho = lovr.math.mat4():orthographic(2, 2, 2, 2, 0, -6)
+      lovr.graphics.setProjection(1, fov, fov, fov, fov)
+      lovr.graphics.setViewPose(1, 0, 0, 0, 0, 0, -1, 0)
+      local max_dim = math.max(image:getDimensions())
+      local base_img = lovr.data.newImage(max_dim, max_dim)
+      --local clear_img = lovr.data.newImage(max_dim, max_dim)
+      base_img:paste(image)
+      local texture = lovr.graphics.newTexture(base_img)
+      lovr.graphics.fill(texture)
+    end)
 end
