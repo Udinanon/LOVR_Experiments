@@ -69,19 +69,18 @@ you can also multiply a 3d vector by them and rotate it, if you mmultiply a coor
 
 ## Theater
  
-the basic is load a local pnh and place on some 3d box
-    harder than it seemed, cubemaps needed shaders, i don0t even know about non cubes
-    also cubemaps need identically sized imagaes so we need to generate the texture dnaically but the tools are limited
-    i think i can do it but it's much more convolluted than i expected
-    i hope it's mostly growth pains and tech debt not by design
-
-using shaders right now is a pain, using canvases we don't need them
+### 2D Images
+planes are much comfier than boxes and don't need cubemaps
 Canvases can render 3d things in a different place, project them onside the canvas and display as a  texture. Neat
 using graphics.fill we can also just push a Image inside. this image is streched
-we could use a blank Image, paste our content, fill tyhe canvas woith it and use that maybe
+we use a blank Image, paste our content, fill the canvas woith it and use that maybe
 
 I want to then test some basics in moving the box around, maybe the pointer library could be useful
+the UX of placing the screen isn't as easy as i envisioned but now thta i understand the isseus i can try some versions
+ok netflix's version is easier and seems comfy, i hope there aren0t many hidden mechanics
 
+perhaps more interesting content would help us
+### moar
 next is loading images from interesting sources
 
 then we could test some audio reproduction

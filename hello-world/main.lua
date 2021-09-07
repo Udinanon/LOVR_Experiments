@@ -20,7 +20,7 @@ function lovr.load()
   -- generate the floor, Kinematic means infinite mass kinda
   ground = world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   -- cubes are the wireframe, boxes the physical ones
-  planes = {}
+  -- planes = {}
   cubes = {}
 
   screen = nil
@@ -49,8 +49,6 @@ function lovr.update(dt)
       local curr_color = shallowCopy(color)
       local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
       color[1] = color[1]+2
-      print(color[1])
-      print(curr_color[1])
       -- the th_x gives us multiple cube sizes
       if th_x >= 0.75 then
         cube["pos"][4]=.20
@@ -67,13 +65,21 @@ function lovr.update(dt)
     if lovr.headset.wasPressed("left", "trigger") then
         -- generate a physics box there
       local hand_pos = {lovr.headset.getPosition("left")}
-      local plane = {["pos"] = hand_pos}
-      -- local h_x, h_y, h_z, angle, ax, ay, az = lovr.headset.getPose("left")
+      print("HANDPOS ",unpack(hand_pos))
+      local head_pos = vec3(lovr.headset.getPosition("head"))
+      print("HEADPOS ", head_pos)
       local vision_vec = lovr.math.newQuat()
-      vision_vec:set(lovr.headset.getOrientation("head"))
-      --local vision_vec = hand_pos:sub(head_pos):normalize()
+      -- vision_vec:set(lovr.headset.getOrientation("head"))
+
+      local diff_vec = vec3(unpack(hand_pos)):sub(head_pos):normalize()
+      print("DIFFVEC", diff_vec)
+      local pos = vec3(unpack(hand_pos)):add(diff_vec:mul(1))
+      print("POS", pos)
+      vision_vec:set(diff_vec)
       
-      plane["rotation"] = {vision_vec:unpack()}
+      screen = {["pos"] = {pos:unpack()}}
+      screen["rotation"] = {vision_vec:unpack()}
+      
       canvas:renderTo(function()
         lovr.graphics.clear()
         lovr.graphics.setColor(1, 1, 1)
@@ -89,8 +95,8 @@ function lovr.update(dt)
         local texture = lovr.graphics.newTexture(base_img)
         lovr.graphics.fill(texture)
       end)
-      plane["material"] = material
-      table.insert(planes, plane)
+      
+      screen["material"] = material
     end
 
     
@@ -155,11 +161,13 @@ function lovr.draw()
   end
 
   -- draw the planes
-  for i, plane in ipairs(planes) do
-    local position = plane["pos"]
-    local rotation = plane["rotation"]
+  if screen then
+    local x, y, z = unpack(screen["pos"])
+    local angle, ax, ay, az  = unpack(screen["rotation"])
+    local material = screen["material"]
+
     lovr.graphics.setColor(1, 1, 1)
-    lovr.graphics.plane(plane["material"], position[1], position[2], position[3], 1, 1, rotation[1], rotation[2], rotation[3], rotation[4])
+    lovr.graphics.plane(material, x, y, z, 1, 1, angle, ax, ay, az)
   end
 
   -- draw the cubes
