@@ -1,4 +1,6 @@
- -- draw boxCollider quickly
+---@diagnostic disable: deprecated
+
+-- draw boxCollider quickly
 local function drawBox(box, color)
   local x, y, z = box:getPosition()
   local dx, dy, dz = box:getShapeList()[1]:getDimensions()
@@ -18,23 +20,27 @@ function lovr.load()
   -- generate the floor, Kinematic means infinite mass kinda
   ground = world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   -- cubes are the wireframe, boxes the physical ones
-  boxes = {}
+  planes = {}
   cubes = {}
+
+  screen = nil
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
     -- check uf no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
-
+  canvas = lovr.graphics.newCanvas(4096, 4096, { stereo = false })
+  material = lovr.graphics.newMaterial(canvas:getTexture())
 end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
   -- update physics, like magic
   world:update(dt)
+  
 
-  if state:isNormal() then
+  if State:isNormal() then
     -- if right hand trigger is pressed
     if lovr.headset.wasPressed("right", 'trigger') then
       -- create cube there with color and shift it slightly
@@ -60,15 +66,34 @@ function lovr.update(dt)
     -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
         -- generate a physics box there
-      local x, y, z = lovr.headset.getPosition("left")
-      local box = world:newBoxCollider(x, y, z, .10)
-      -- the velocity thing feels weird but tehre is no headset.getAccelleration
-      -- maybe making a custom function but eh
-      local vx, vy, vz = lovr.headset.getVelocity("left")
-      box:setLinearVelocity(vx, vy, vz)
-      table.insert(boxes, box)
+      local hand_pos = {lovr.headset.getPosition("left")}
+      local plane = {["pos"] = hand_pos}
+      -- local h_x, h_y, h_z, angle, ax, ay, az = lovr.headset.getPose("left")
+      local vision_vec = lovr.math.newQuat()
+      vision_vec:set(lovr.headset.getOrientation("head"))
+      --local vision_vec = hand_pos:sub(head_pos):normalize()
+      
+      plane["rotation"] = {vision_vec:unpack()}
+      canvas:renderTo(function()
+        lovr.graphics.clear()
+        lovr.graphics.setColor(1, 1, 1)
+        local fov = math.rad(67)
+        --local ortho = lovr.math.mat4():orthographic(2, 2, 2, 2, 0, -6)
+        lovr.graphics.setProjection(1, fov, fov, fov, fov)
+        lovr.graphics.setViewPose(1, 0, 0, 0, 0, 0, -1, 0)
+        local gatt_img = lovr.data.newImage("paris.jpg")
+        local max_dim = math.max(gatt_img:getDimensions())
+        local base_img = lovr.data.newImage(max_dim, max_dim)
+        --local clear_img = lovr.data.newImage(max_dim, max_dim)
+        base_img:paste(gatt_img)
+        local texture = lovr.graphics.newTexture(base_img)
+        lovr.graphics.fill(texture)
+      end)
+      plane["material"] = material
+      table.insert(planes, plane)
     end
 
+    
     -- when both grips are pressed, kinda finnicky but ok
     if lovr.headset.wasPressed("left", 'grip') then
         if lovr.headset.wasPressed("right", 'grip') then
@@ -129,27 +154,33 @@ function lovr.draw()
     end
   end
 
-  -- draw the boxes
-  for i, box in ipairs(boxes) do
-    local x, y, z = box:getPosition()
-    lovr.graphics.setColor(0.8, 0.8, 0.8)
-    lovr.graphics.cube('fill', x, y, z, .1, box:getOrientation())
+  -- draw the planes
+  for i, plane in ipairs(planes) do
+    local position = plane["pos"]
+    local rotation = plane["rotation"]
+    lovr.graphics.setColor(1, 1, 1)
+    lovr.graphics.plane(plane["material"], position[1], position[2], position[3], 1, 1, rotation[1], rotation[2], rotation[3], rotation[4])
   end
 
   -- draw the cubes
   for i, cube in ipairs(cubes) do
-    cube_color=cube["color"]
-    position=cube["pos"]
----@diagnostic disable-next-line: deprecated
+    local cube_color = cube["color"]
+    local position = cube["pos"]
     local r, g, b, a=HSVToRGB(unpack(cube_color))
     lovr.graphics.setColor(r, g, b, a)
----@diagnostic disable-next-line: deprecated
     lovr.graphics.cube("line", unpack(position))
   end
 
-  drawBox(ground, {.15, .15, .17})
+  -- drawBox(ground, {.15, .15, .17})
 
-  
+  -- draw axes
+  lovr.graphics.setColor(0, 1, 0)
+  lovr.graphics.line(0, 0, 0, 1, 0, 0)
+  lovr.graphics.setColor(0, 0, 1)
+  lovr.graphics.line(0, 0, 0, 0, 1, 0)
+  lovr.graphics.setColor(1, 0, 0)
+  lovr.graphics.line(0, 0, 0, 0, 0, 1)
+
 end
 
 -- utility function for the rainbow thing
@@ -182,6 +213,21 @@ function shallowCopy(orig)
         for orig_key, orig_value in pairs(orig) do
             copy[orig_key] = orig_value
         end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
     else -- number, string, boolean, etc
         copy = orig
     end

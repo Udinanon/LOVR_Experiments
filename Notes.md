@@ -70,6 +70,15 @@ you can also multiply a 3d vector by them and rotate it, if you mmultiply a coor
 ## Theater
  
 the basic is load a local pnh and place on some 3d box
+    harder than it seemed, cubemaps needed shaders, i don0t even know about non cubes
+    also cubemaps need identically sized imagaes so we need to generate the texture dnaically but the tools are limited
+    i think i can do it but it's much more convolluted than i expected
+    i hope it's mostly growth pains and tech debt not by design
+
+using shaders right now is a pain, using canvases we don't need them
+Canvases can render 3d things in a different place, project them onside the canvas and display as a  texture. Neat
+using graphics.fill we can also just push a Image inside. this image is streched
+we could use a blank Image, paste our content, fill tyhe canvas woith it and use that maybe
 
 I want to then test some basics in moving the box around, maybe the pointer library could be useful
 
@@ -80,3 +89,18 @@ then we could test some audio reproduction
 The end goal is a 3D media room with mobile seating and screen and some basic media selection and playback control
 Should handle both video audio and images, from local sources and maybe something more
 
+## Graphics
+rendering tetures on 2d objects needs shaders, which is shit
+BUT we can use canvases to generate the textures, apply the caonvas to a Material and then we don0t need them!
+better
+
+printing single color blobs didn0t work, maybe writing them to disk will be better
+this can be done with
+    lovr.filesystem.write("whatever.txt", blob)
+and then 
+    adb pull /sdcard/Android/data/org.lovr.hotswap/files/whatever.txt
+
+## rotations
+planes have defalt normal towards 0, 0, 1
+idea 1: get direction between head and left hand and sue that for the center, easy to aim and to adjust, always normal to vision field
+how the fuck do unpack work
