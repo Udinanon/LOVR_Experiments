@@ -1,4 +1,5 @@
 #custom 
+*.md
 *.json
 *.png
 *.jpg

@@ -1,29 +1,22 @@
 ---@diagnostic disable: deprecated
-
--- draw boxCollider quickly
-local function drawBox(box, color)
-  local x, y, z = box:getPosition()
-  local dx, dy, dz = box:getShapeList()[1]:getDimensions()
-  lovr.graphics.setColor(color)
-  lovr.graphics.box('fill', x, y, z, dx, dy, dz, box:getOrientation())
-end
-
+-- Module instantiation
+local cjson = require "cjson"
+local cjson2 = cjson.new()
+local request = require("luajit-request")
 
 -- run on boot of the program, where all the setup happes
 function lovr.load()
-  -- prepare for the color wheel thing
-  color = {0, 1, 1, 1}
   -- this runs the physics, here we also set some global constants
   world = lovr.physics.newWorld()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
   -- generate the floor, Kinematic means infinite mass kinda
   ground = world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
-  -- cubes are the wireframe, boxes the physical ones
-  -- planes = {}
-  cubes = {}
 
   screen = nil
+  username = "DottorMarcus"
+  URL = "https://e621.net/"
+  
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false, ["LS"]=false, ["RS"]=false}
   function State:isNormal ()
@@ -46,17 +39,25 @@ function lovr.update(dt)
     local plane_pos = head_pos:add((vision_vec:direction()):mul(2))
     
     screen = {["pos"] = {plane_pos:unpack()}}
-    screen["rotation"] = {vision_vec:unpack()}    
+    screen["rotation"] = {vision_vec:unpack()}
     screen["material"] = material
   end
 
   if State:isNormal() then
+    if lovr.headset.wasPressed("right", "trigger") then
+          local response_json = request.send(URL+"posts/random.json?tags=fav:"+username).body
+          local response = cjson.decode(response_json)
+          local image_data= response["posts"][1]
+          local blob = lovr.data.newBlob(image_data)
+          local image = lovr.graphics.newImage(blob)
+          updateCanvas(image)
+    end
   end
 
 
   if lovr.headset.wasPressed("right", "thumbstick") then
     State["RS"] = not State["RS"]
-    updateCanvas(image)
+
   end
 end
 
@@ -66,7 +67,7 @@ function lovr.draw()
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = vec3(lovr.headset.getPosition(hand))
     local hand_quat = quat(lovr.headset.getOrientation(hand))
-    if State.isNormal() then
+    if State.isNormal() or State["RS"] then
       lovr.graphics.setColor(1, 1, 1)
       lovr.graphics.sphere(position, .01)
 
@@ -114,17 +115,6 @@ function lovr.draw()
     lovr.graphics.setColor(1, 1, 1)
     lovr.graphics.plane(material, x, y, z, 1, 1, angle, ax, ay, az)
   end
-
-  -- draw the cubes
-  for i, cube in ipairs(cubes) do
-    local cube_color = cube["color"]
-    local position = cube["pos"]
-    local r, g, b, a=HSVToRGB(unpack(cube_color))
-    lovr.graphics.setColor(r, g, b, a)
-    lovr.graphics.cube("line", unpack(position))
-  end
-
-  -- drawBox(ground, {.15, .15, .17})
 
   -- draw axes
   lovr.graphics.setColor(0, 1, 0)
