@@ -48,3 +48,4 @@ luac.out
 *.hex
 
 hello-world/LOVR.code-workspace
+hello-world/comic/Thumbs.db

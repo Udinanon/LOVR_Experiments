@@ -13,21 +13,50 @@ function lovr.load()
   -- generate the floor, Kinematic means infinite mass kinda
   local width, depth = lovr.headset.getBoundsDimensions()
   print("LODR LOAD")
-  print(width)
-  print(depth)
+
   world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   -- cubes are the wireframe, boxes the physical ones
-  boxes = {}
-  cubes = {}
+  view_tablet = false
+  tablet = {
+    pos = lovr.math.newVec3(), 
+    rot = lovr.math.newQuat(), 
+    size = nil, 
+    material = nil,
+    page = 0 
+  }
   volumes = {}
   walls = 0
+  drag = {
+    active = false,
+    hand = nil,
+    offset = lovr.math.newVec3(),
+    in_range = false
+  }
   --used to track if buttons were pressed
-  State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
+  State = {["A"] = false}
   function State:isNormal ()
     -- check uf no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
+  
+  canvas = lovr.graphics.newCanvas(4096, 4096, { stereo = false })
+  -- material = lovr.graphics.newMaterial(canvas:getTexture())
+  
+  files = lovr.filesystem.getDirectoryItems("/comic/")
+  print(#files)
 
+  image = lovr.data.newImage("gatt.jpg")
+  tablet.material = lovr.graphics.newMaterial(genTexture(image))
+  -- updateCanvas(image)
+
+  shader = lovr.graphics.newShader('unlit', {      normalMap = false,
+      indirectLighting = true,
+      occlusion = true,
+      emissive = true,
+      skipTonemap = false})
+  shader:send('lovrLightDirection', { -1, -1, -1 })
+  shader:send('lovrLightColor', { .9, .9, .8, 1.0 })
+  
 end
 
 -- runs at each dt interval, where you do input and physics
@@ -45,52 +74,67 @@ function lovr.update(dt)
 
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
-      -- create cube there with color and shift it slightly
+      -- create a tablet there 
+      
       local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
       local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
-      local curr_color = shallowCopy(color)
-      local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
-      color[1] = color[1]+2
 
-      -- the th_x gives us multiple cube sizes
-      if th_x >= 0.75 then
-        cube["pos"][4]=.20
-        table.insert(cubes, cube)
-      elseif th_x <= -0.75 then
-        cube["pos"][4]=.05
-        table.insert(cubes, cube)
-      else 
-        table.insert(cubes, cube)
-      end
-
+      tablet.pos:set(x, y, z)
+      tablet.rot:set(angle, ax, ay, az) 
+      tablet.size = 1
+      view_tablet = true
     end 
+  end
 
-    -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "trigger") then
-      -- generate a physics box there
-      local x, y, z = lovr.headset.getPosition("left")
-      local box = world:newBoxCollider(x, y, z, .10)
-      -- the velocity thing feels weird but tehre is no headset.getAccelleration
-      -- maybe making a custom function but eh
-      local vx, vy, vz = lovr.headset.getVelocity("left")
-      box:setLinearVelocity(vx, vy, vz)
-      table.insert(boxes, box)
+  if lovr.headset.wasPressed("right", "grip") and view_tablet then
+    local offset = tablet.pos - vec3(lovr.headset.getPosition("right"))
+    local halfSize = 1.189 / (1.414 ^ tablet.size)
+    local x, y, z = offset:unpack()
+    if math.abs(x) < halfSize and math.abs(y) < halfSize and math.abs(z) < halfSize then
+      drag.active = true
+      drag.hand = "right"
+      drag.offset:set(offset)
     end
   end
 
-  -- when both grips are pressed, kinda finnicky but ok
-  if lovr.headset.wasPressed("left", 'grip') and lovr.headset.wasPressed("right", 'grip') then
-      -- remove all boxes and cubes
-      cubes = {}
-      boxes = {}
+
+  if drag.active then
+    local handPosition = vec3(lovr.headset.getPosition(drag.hand))
+    tablet.pos:set(handPosition + drag.offset)
+
+    if lovr.headset.wasReleased(drag.hand, 'grip') then
+      drag.active = false
+    end
   end
+
+  if lovr.headset.wasPressed("right", "thumbstick") then
+    tablet.size = tablet.size + 1
+    if tablet.size > 6 then
+      tablet.size = 1
+    end
+  end 
 
   if lovr.headset.wasPressed("right", "a") then
-    State["A"] = not State["A"]
-    if State["A"] then
+    -- go to next image
+      -- add some safeguards on this
+    tablet.page = tablet.page + 1
+    image = lovr.data.newImage("/comic/" .. files[tablet.page])
+    tablet.material = lovr.graphics.newMaterial(genTexture(image))
+  end
 
-      
+
+  if lovr.headset.wasPressed("right", "b") then
+    -- go to next image
+      -- add some safeguards on this
+    if tablet.page > 1 then 
+      tablet.page = tablet.page - 1
+      image = lovr.data.newImage("/comic/" .. files[tablet.page])
+      tablet.material = lovr.graphics.newMaterial(genTexture(image))
     end
+  end
+
+  if lovr.headset.wasPressed("left", "thumbstick") then
+    State["A"] = not State["A"]
   end
 end
 
@@ -102,6 +146,9 @@ function lovr.draw()
     local hand_quat = quat(lovr.headset.getOrientation(hand))
     if State.isNormal() then
       lovr.graphics.setColor(1, 1, 1)
+      if drag.active then
+        lovr.graphics.setColor(0.3, 0.3, 1)
+      end
       lovr.graphics.sphere(position, .01)
 
       lovr.graphics.setColor(1, 0, 0)
@@ -141,21 +188,18 @@ function lovr.draw()
     end
   end
 
-  -- draw the boxes
-  for i, box in ipairs(boxes) do
-    local x, y, z = box:getPosition()
-    lovr.graphics.setColor(0.8, 0.8, 0.8)
-    lovr.graphics.cube('fill', x, y, z, .1, box:getOrientation())
+  -- draw the tablet
+  -- lovr.graphics.setShader(shader)
+  if view_tablet then
+    local position = tablet.pos
+    local rotation = tablet.rot
+    local size = 1.189 / (1.414 ^ tablet.size)
+    
+    lovr.graphics.setColor(1, 1, 1)
+    lovr.graphics.plane(tablet.material, position, size / 1.414, size, rotation)
   end
+ --  lovr.graphics.setShader()
 
-  -- draw the cubes
-  for i, cube in ipairs(cubes) do
-    local cube_color=cube["color"]
-    local position=cube["pos"]
-    local r, g, b, a=HSVToRGB(unpack(cube_color))
-    lovr.graphics.setColor(r, g, b, a)
-    lovr.graphics.cube("line", unpack(position))
-  end
 
   -- A state, add collider volumes mode
   if State["A"] then
@@ -251,6 +295,41 @@ function lovr.draw()
   lovr.graphics.box("line", -width/2, 2, 0, 0.1, 4, height)
   lovr.graphics.box("line", 0, 2, height/2, width, 4, 0.1)
   lovr.graphics.box("line", 0, 2, -height/2, width, 4, 0.1)
+end
+
+
+function genTexture(image)
+  local dim1, dim2 = image:getDimensions()
+  print("img dim")
+  print(dim1 .. " " .. dim2)
+  print("img ratio " .. dim2/dim1)
+  local max_dim = math.max(dim1, dim2)
+  local base_img = nil
+  local off1, off2 = nil, nil  
+  
+  if dim2/dim1 >= 1.414 then
+    -- the image is longer than standard paper
+    base_img = lovr.data.newImage(max_dim/1.414, max_dim)
+    print("base dim")
+    print(max_dim/1.414 .. " " .. max_dim)
+    off1 = (max_dim/1.414 - dim1)
+    off2 = (max_dim - dim2)
+  else 
+    base_img = lovr.data.newImage(max_dim, max_dim*1.414)
+    print("base dim")
+    print(max_dim .. " " .. max_dim*1.414)
+    off1 = (max_dim - dim1) / 2 
+    off2 = (max_dim*1.414 - dim2) / 2
+  end
+  
+  print("off")
+  print(off1 .. " " .. off2)
+
+
+  base_img:paste(image, off1, off2)
+
+  local texture = lovr.graphics.newTexture(base_img, {mipmaps = false, msaa = 64})
+  return texture
 end
 
 -- utility function for the rainbow thing
