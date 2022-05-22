@@ -22,7 +22,7 @@ function lovr.load()
     rot = lovr.math.newQuat(), 
     size = nil, 
     material = nil,
-    page = 0 
+    page = 0
   }
   volumes = {}
   walls = 0
@@ -30,7 +30,8 @@ function lovr.load()
     active = false,
     hand = nil,
     offset = lovr.math.newVec3(),
-    in_range = false
+    in_range = false,
+    base_rot = lovr.math.newQuat()
   }
   --used to track if buttons were pressed
   State = {["A"] = false}
@@ -49,7 +50,7 @@ function lovr.load()
   tablet.material = lovr.graphics.newMaterial(genTexture(image))
   -- updateCanvas(image)
 
-  shader = lovr.graphics.newShader('unlit', {      normalMap = false,
+  shader = lovr.graphics.newShader('unlit', {normalMap = false,
       indirectLighting = true,
       occlusion = true,
       emissive = true,
@@ -81,12 +82,14 @@ function lovr.update(dt)
 
       tablet.pos:set(x, y, z)
       tablet.rot:set(angle, ax, ay, az) 
-      tablet.size = 1
+      if tablet.size == nil then
+        tablet.size = 1
+      end
       view_tablet = true
     end 
   end
 
-  if lovr.headset.wasPressed("right", "grip") and view_tablet then
+  if lovr.headset.wasPressed("right", "grip") and view_tablet and not drag.active then
     local offset = tablet.pos - vec3(lovr.headset.getPosition("right"))
     local halfSize = 1.189 / (1.414 ^ tablet.size)
     local x, y, z = offset:unpack()
@@ -94,6 +97,7 @@ function lovr.update(dt)
       drag.active = true
       drag.hand = "right"
       drag.offset:set(offset)
+      drag.base_rot:set(lovr.math.newQuat(lovr.headset.getOrientation("right"))):conjugate()
     end
   end
 
@@ -101,6 +105,9 @@ function lovr.update(dt)
   if drag.active then
     local handPosition = vec3(lovr.headset.getPosition(drag.hand))
     tablet.pos:set(handPosition + drag.offset)
+    local handRotation = quat(lovr.headset.getOrientation(drag.hand))
+    handRotation:mul(drag.base_rot)
+    tablet.rot:set(handRotation)
 
     if lovr.headset.wasReleased(drag.hand, 'grip') then
       drag.active = false
