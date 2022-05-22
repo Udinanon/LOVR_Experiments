@@ -24,9 +24,16 @@ function lovr.load()
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
-    -- check uf no state is normal
+    -- check if no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
+  view_deck = false
+  deck = {
+    pos = lovr.math.newVec3(), 
+    rot = lovr.math.newQuat(), 
+    material = nil,
+    card = 0 
+  }
 
 end
 
@@ -49,19 +56,10 @@ function lovr.update(dt)
       local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
       local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
       local curr_color = shallowCopy(color)
-      local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
-      color[1] = color[1]+2
 
-      -- the th_x gives us multiple cube sizes
-      if th_x >= 0.75 then
-        cube["pos"][4]=.20
-        table.insert(cubes, cube)
-      elseif th_x <= -0.75 then
-        cube["pos"][4]=.05
-        table.insert(cubes, cube)
-      else 
-        table.insert(cubes, cube)
-      end
+      local view_deck = true
+      local deck = {["pos"] = {x, y, z}, ["rot"] = {angle, ax, ay, az}}
+      -- local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
 
     end 
 
@@ -148,13 +146,13 @@ function lovr.draw()
     lovr.graphics.cube('fill', x, y, z, .1, box:getOrientation())
   end
 
-  -- draw the cubes
-  for i, cube in ipairs(cubes) do
-    local cube_color=cube["color"]
-    local position=cube["pos"]
-    local r, g, b, a=HSVToRGB(unpack(cube_color))
-    lovr.graphics.setColor(r, g, b, a)
-    lovr.graphics.cube("line", unpack(position))
+-- draw deck
+  if deck then
+    local r_pos = vec3(lovr.headset.getPosition("right"))
+    deck.pos = r_pos
+    local r_rotation = quat(lovr.headset.getOrientation("right")):mul(quat(vec3(1, 1, 0)))
+    deck.rot = r_rotation
+    lovr.graphics.box("fill", deck.pos, 58*0.001, 89*0.001, 10*0.001, deck.rot)
   end
 
   -- A state, add collider volumes mode
