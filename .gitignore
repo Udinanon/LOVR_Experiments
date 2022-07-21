@@ -1,10 +1,8 @@
 #custom 
 *.jpg
 *.png
-*.md
-*.json
-*.png
-*.jpg
+*.db
+/API Docs/
 
 # Compiled Lua sources
 luac.out
@@ -47,4 +45,3 @@ luac.out
 *.x86_64
 *.hex
 
-hello-world/LOVR.code-workspace
