@@ -30,12 +30,29 @@ function lovr.load()
     graph = nil
   }
 
+  console = {
+    position = lovr.math.newVec3(),
+    visible = false,
+    size = lovr.math.newVec3(.25, .1, .25),
+    knob_offset = lovr.math.newVec3(0, 0, 0.1), 
+    knob_size = lovr.math.newVec3(.1, .04, 10),
+    knob_rotation = nil
+  }
+
   board = {
     position = lovr.math.newVec3(),
     pose = lovr.math.newQuat(),
     visible = false,
     size = 1.0,
     material = lovr.graphics.newMaterial()
+  }
+
+  grab = { 
+    active = false,
+    hand = nil,
+    offset = lovr.math.newVec3(),
+    in_range = false,
+    base_rot = lovr.math.newQuat()
   }
   shader = lovr.graphics.newShader('unlit', {})
   lovr.graphics.setShader(shader)
@@ -99,11 +116,6 @@ function lovr.update(dt)
       local px_y = px_zero - y * px_scale
       px_y = math.min(math.max(px_y, 0), 600)
       image:setPixel(i, px_y, 0, 1, 0)
-
-      if i % 10 == 0 then
-        print("x", x)
-        print("y", y)
-      end
     end
   local texture = lovr.graphics.newTexture(image, {format= "rgb", mipmaps = false})
   utah.graph = texture
@@ -121,16 +133,50 @@ function lovr.update(dt)
     local acceleration = lovr.math.vec3(hand_pos + hand_speed * utah.k3 - utah.position - utah.velocity * utah.k1) / utah.k2
     utah.velocity = lovr.math.newVec3(utah.velocity + acceleration*dt)
 
+    -- just use a fuking slider jesus
+    if lovr.headset.wasPressed("right", "grip") and console.visible and not grab.active then
+      local knob_pos = console.position + console.knob_offset
+      local offset = (knob_pos - hand_pos):length()
+      if offset < 0.15 then
+        grab.active = true
+        grab.hand = "right"
+        grab.offset:set(offset)
+        local v = vec3(0, 1, 0)
+        hand_conj = lovr.math.newQuat(lovr.headset.getOrientation("right")):conjugate()
+        v = hand_conj:mul(v)
+        angle = math.atan2(v[3], v[1])
+        print("v", v)
+        print("angle", angle)
+      end
+    end
 
-    if lovr.headset.wasPressed("right", 'trigger') then
+    if grab.active then
+      
+      local handRotation = quat(lovr.headset.getOrientation(grab.hand))
+      handRotation:mul(grab.base_rot)
 
-    end 
+      if lovr.headset.wasReleased(grab.hand, 'grip') then
+        grab.active = false
+      end
+      local hand_pos = vec3(lovr.headset.getPosition(grab.hand))
+      local knob_pos = console.position + console.knob_offset
+      local offset = (knob_pos - hand_pos):length()
+      if offset > 0.3 then
+        grab.active = false
+      end
+    end
 
     -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
       board.visible = not board.visible
       board.position = lovr.math.newVec3(lovr.headset.getPosition("hand/left"))
       board.pose = lovr.math.newQuat(lovr.headset.getOrientation("hand/left"))
+    end
+    -- if left trigger is pressed
+    if lovr.headset.wasPressed("left", "grip") then
+      console.visible = not console.visible
+      console.position = lovr.math.newVec3(lovr.headset.getPosition("hand/left"))
+      console.pose = lovr.math.newQuat(lovr.headset.getOrientation("hand/left"))
     end
   end
 
@@ -151,6 +197,14 @@ function lovr.draw()
   
   if board.visible then
     lovr.graphics.plane(board.material, board.position, .8, .6, board.pose)
+  end
+
+  if console.visible then
+    lovr.graphics.setColor(0.6, 0.6, 0.6)
+    lovr.graphics.box("fill", console.position, console.size, quat(0, 0, 1, 0))
+    lovr.graphics.setColor(0.7, 0.4, 0.4)
+    lovr.graphics.cylinder(console.position + console.knob_offset, console.knob_size[1], quat(0, 0, 1, 0), console.knob_size[2], console.knob_size[2], true, console.knob_size[3])
+    lovr.graphics.setColor(1, 1, 1)
   end
 
   for i, hand in ipairs(lovr.headset.getHands()) do
