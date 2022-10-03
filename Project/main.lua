@@ -1,6 +1,108 @@
 ---@diagnostic disable: deprecated, redundant-parameter
 
+function generate_board_image()
+  local image = lovr.data.newImage(800, 600, "rgb", nil) -- empty image
+  local x = 0
+  local dx = 0
+  local y = 0
+  local dy = 0
+  local ddy = 0
 
+  local px_zero = 500
+  local px_scale = 250
+  local dt = 0.1 -- 10 ms ????
+  for i = 0, 799 do
+    -- x
+    if i < 300 then
+      --before the step
+      image:setPixel(i, px_zero, 1, 0, 0)
+    else if i == 300 then
+        -- draw a nice step
+        for j = px_zero, px_zero - px_scale do
+          image:setPixel(i, j, 1, 0, 0)
+        end
+        x = 1
+        dx = 1
+      else
+        if dx == 1 then
+          dx = 0
+        end
+        -- after
+        image:setPixel(i, px_zero - px_scale, 1, 0, 0)
+      end
+    end
+    -- compute y
+    y = y + dy * dt
+    ddy = (x + dx * teapot_controller.utah.k3 - y - dy * teapot_controllerutah.k1) / teapot_controllerutah.k2
+    dy = dy + ddy * dt
+
+    -- 0 ==  px_zero
+    -- 1 ==  px_zero - 1 * px_scale
+    local px_y = px_zero - y * px_scale
+    px_y = math.min(math.max(px_y, 0), 600)
+    image:setPixel(i, px_y, 0, 1, 0)
+  end
+  local texture = lovr.graphics.newTexture(image, { format = "rgb", mipmaps = false })
+  teapot_controller.utah.graph = texture
+  teapot_controller.board.material:setTexture(texture)
+end
+
+function move_and_invert_board()
+  teapot_controller.board.visible = not teapot_controller.board.visible
+  
+  teapot_controller.board.position = lovr.headset.getPosition("hand/right")
+  teapot_controller.board.rotation = lovr.headset.getOrientation("hand/right")
+end
+
+function draw_all()
+  teapot_controller.utah.model:draw(teapot_controller.utah.position, .01)
+  if teapot_controller.board.visible then
+    teapot_controller.board.draw_board()
+  end
+end
+
+function draw_board()
+  lovr.graphics.plane(teapot_controller.board.material, teapot_controller.board.position, .8, .6, teapot_controller.board.pose)
+  local cube_pos_v = teapot_controller.board.position + teapot_controller.board.knob_offset.v
+  lovr.graphics.cube("fill", cube_pos_v, 0.05, teapot_controller.board.rotation)
+  lovr.graphics.cube("fill", cube_pos_v + teapot_controller.board.knob_offset.h, 0.05, teapot_controller.board.rotation)
+  lovr.graphics.cube("fill", cube_pos_v - teapot_controller.board.knob_offset.h, 0.05, teapot_controller.board.rotation)
+
+end
+
+function update(dt)
+  local hand_pos = vec3(lovr.headset.getPosition("hand/right"))
+  local hand_speed = vec3(lovr.headset.getVelocity("hand/right"))
+  teapot_controller.utah.position = lovr.math.newVec3(teapot_controller.utah.position + teapot_controller.utah.velocity * dt)
+  local acceleration = lovr.math.vec3(hand_pos + hand_speed * teapot_controller.utah.k3 - teapot_controller.utah.position - teapot_controller.utah.velocity * teapot_controller.utah.k1) / teapot_controller.utah.k2
+  teapot_controller.utah.velocity = lovr.math.newVec3(teapot_controller.utah.velocity + acceleration * dt)
+end
+teapot_controller={
+  utah ={ 
+    model = lovr.graphics.newModel("Assets/utah.stl"),
+    position = lovr.math.newVec3(0.0),
+    velocity = lovr.math.newVec3(0.0),
+    k1 = 1.0,
+    k2 = 2.0,
+    k3 = 3.0,
+    graph = nil,
+    update
+  },
+
+  board = {
+    pose = lovr.math.newQuat(),
+    visible = false,
+    size = 1.0,
+    material = lovr.graphics.newMaterial(),
+    knob_offset = {v = lovr.math.newVec3(0, 0, 0.1), h = lovr.math.newVec3(0, -0.1, 0)},
+    knob_size = lovr.math.newVec3(.1, .04, 10),
+    generate_board_image,
+    draw_board,
+    move_and_invert_board
+  },
+  draw_all
+
+}
 
 -- run on boot of the program, where all the setup happes
 function lovr.load()
@@ -20,32 +122,7 @@ function lovr.load()
     -- check uf no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
-  utah ={ 
-    model = lovr.graphics.newModel("utah.stl"),
-    position = lovr.math.newVec3(0.0),
-    velocity = lovr.math.newVec3(0.0),
-    k1 = 1.0,
-    k2 = 2.0,
-    k3 = 3.0,
-    graph = nil
-  }
 
-  console = {
-    position = lovr.math.newVec3(),
-    visible = false,
-    size = lovr.math.newVec3(.25, .1, .25),
-    knob_offset = lovr.math.newVec3(0, 0, 0.1), 
-    knob_size = lovr.math.newVec3(.1, .04, 10),
-    knob_rotation = nil
-  }
-
-  board = {
-    position = lovr.math.newVec3(),
-    pose = lovr.math.newQuat(),
-    visible = false,
-    size = 1.0,
-    material = lovr.graphics.newMaterial()
-  }
 
   grab = { 
     active = false,
@@ -72,54 +149,12 @@ function lovr.update(dt)
   end
 
   -- geerate the step response graph
-  if utah.graph == nil then
+  if teapot_controller.utah.graph == nil then
     -- working at 90 fps we approximate to 10ms a step
     -- so 1000 values is 10s of evolution
+    teapot_controller.board.generate_board_image()
     
-    local image = lovr.data.newImage(800, 600, "rgb", nil) -- empty image
-    local x = 0
-    local dx = 0
-    local y = 0
-    local dy = 0
-    local ddy = 0
-
-    local px_zero = 500
-    local px_scale = 250
-    dt = 0.1 -- 10 ms ????
-    for i = 0, 799 do
-      -- x
-      if i < 300 then
-        --before the step
-        image:setPixel(i, px_zero, 1, 0, 0)
-      else if i == 300 then
-        -- draw a nice step
-          for j = px_zero, px_zero-px_scale do
-            image:setPixel(i, j, 1, 0, 0)
-          end
-        x = 1
-        dx = 1
-      else
-        if dx == 1 then
-          dx = 0
-        end
-        -- after
-          image:setPixel(i, px_zero - px_scale, 1, 0, 0)
-      end
-      end
-      -- compute y
-      y = y + dy * dt
-      ddy = (x + dx * utah.k3 - y - dy*utah.k1)/utah.k2
-      dy = dy + ddy * dt
-      
-      -- 0 ==  px_zero
-      -- 1 ==  px_zero - 1 * px_scale
-      local px_y = px_zero - y * px_scale
-      px_y = math.min(math.max(px_y, 0), 600)
-      image:setPixel(i, px_y, 0, 1, 0)
-    end
-  local texture = lovr.graphics.newTexture(image, {format= "rgb", mipmaps = false})
-  utah.graph = texture
-  board.material:setTexture(texture)
+    
     
   end
 
@@ -127,11 +162,7 @@ function lovr.update(dt)
     -- https://www.youtube.com/watch?v=KPoeNZZ6H4s
     -- semi implicit Euler thord to integrate y + y' * k1 + y'' * k2 = x + x' * k3
     -- x is hand, y is utah
-    local hand_pos = vec3(lovr.headset.getPosition("hand/right"))
-    local hand_speed = vec3(lovr.headset.getVelocity("hand/right"))
-    utah.position = lovr.math.newVec3(utah.position + utah.velocity*dt)
-    local acceleration = lovr.math.vec3(hand_pos + hand_speed * utah.k3 - utah.position - utah.velocity * utah.k1) / utah.k2
-    utah.velocity = lovr.math.newVec3(utah.velocity + acceleration*dt)
+    teapot_controller.utah.update(dt)
 
     -- just use a fuking slider jesus
     if lovr.headset.wasPressed("right", "grip") and console.visible and not grab.active then
@@ -168,16 +199,9 @@ function lovr.update(dt)
 
     -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
-      board.visible = not board.visible
-      board.position = lovr.math.newVec3(lovr.headset.getPosition("hand/left"))
-      board.pose = lovr.math.newQuat(lovr.headset.getOrientation("hand/left"))
+      teapot_controller.board.move_board()
     end
-    -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "grip") then
-      console.visible = not console.visible
-      console.position = lovr.math.newVec3(lovr.headset.getPosition("hand/left"))
-      console.pose = lovr.math.newQuat(lovr.headset.getOrientation("hand/left"))
-    end
+
   end
 
 
@@ -193,19 +217,9 @@ end
 -- this draws obv
 function lovr.draw()
   -- draw white spheres for the hands
-  utah.model:draw( utah.position, .01)
+  teapot_controller.utah.model:draw(teapot_controller.utah.position, .01)
   
-  if board.visible then
-    lovr.graphics.plane(board.material, board.position, .8, .6, board.pose)
-  end
-
-  if console.visible then
-    lovr.graphics.setColor(0.6, 0.6, 0.6)
-    lovr.graphics.box("fill", console.position, console.size, quat(0, 0, 1, 0))
-    lovr.graphics.setColor(0.7, 0.4, 0.4)
-    lovr.graphics.cylinder(console.position + console.knob_offset, console.knob_size[1], quat(0, 0, 1, 0), console.knob_size[2], console.knob_size[2], true, console.knob_size[3])
-    lovr.graphics.setColor(1, 1, 1)
-  end
+  teapot_controller.show()
 
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = vec3(lovr.headset.getPosition(hand))
