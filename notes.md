@@ -1,15 +1,15 @@
 # Notes
 ## Links
 ### LOVR
-https://lovr.org/docs/Getting_Started
-https://github.com/bjornbytes/lovr
-https://app.slack.com/client/T59PJ1KCJ/C59QZ4V6Y
+[Official Docs](https://lovr.org/docs/Getting_Started)
+[LOVR GtHub](https://github.com/bjornbytes/lovr)
+[LOVR Slack](https://app.slack.com/client/T59PJ1KCJ/C59QZ4V6Y)
 
 ## ADB
 More infod about ADB can be found at:
  - [Official ADB Docs](https://developer.android.com/studio/command-line/adb)
  - [ADB CheatSheet](https://www.automatetheplanet.com/wp-content/uploads/2019/08/Cheat_sheet_ADB.pdf)
- - [Coulus ADB Docs](https://developer.oculus.com/documentation/native/android/ts-adb/)
+ - [Oculus ADB Docs](https://developer.oculus.com/documentation/native/android/ts-adb/)
 ### Useful Commands
 To identify all connected devices use 
 
@@ -112,6 +112,7 @@ Or you can just add the restart to your adb command
 
 
 ## Math
+Quaterniions are used for rotation systems in LOVR.
 
 They represent rotations, so they have also an axis of rotation 
 you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversly that direction in the coordinate system define by the quaternion.
@@ -125,27 +126,28 @@ better
 
 printing single color blobs didn0t work, maybe writing them to disk will be better
 this can be done with
-
+```lua
     lovr.filesystem.write("whatever.txt", blob)
+```
 and then 
-
+```bash
     adb pull /sdcard/Android/data/org.lovr.hotswap/files/whatever.txt
-
-local points = lovr.headset.getBoundsGeometry() returns an ungodly number of points
+```
+`local points = lovr.headset.getBoundsGeometry()` returns an ungodly number of points
 
 the standard shader admits only onem light source
 
 ## Shaders
-Shaders are  compex topic, funadmental for 3D rendering, but can be sued also for parallel high performance comuptations and for basic texturing
+Shaders are a complex topic, fundamental for 3D rendering, and can also be used for parallel high performance comuptations
 
-THe system uses a `shader = lovr.graphics.newShader([[]],[[]])` funxtion that reads raw GLSL and compiles a shader
+THe system uses a `shader = lovr.graphics.newShader([[]],[[]])` function that reads raw GLSL and compiles a shader
 this can then be loaded by `lovr.graphics.setShader(shader)`
-Theis sader will dictate using the Verted and Fragment shaders the properties and color fo pixels rendered using this shader
+These shader will dictate the properties and color fo pixels rendered
 
 all shaders can access `uniform <type> <name>` values, given by LOVR with `shader:send(<name>, <value>)`
 
-shaders can also use ShaderBlocks to pass back and forthh more types of data, including arrays 
-the code here is more complex, so make reference to the [New Shader Block Docs](https://lovr.org/docs/v0.15.0/lovr.graphics.newShaderBlock) and [Shader Block Docs](https://lovr.org/docs/v0.15.0/ShaderBlock)
+shaders can also use ShaderBlocks to pass back and forth more types of data, including arrays 
+the code here is more complex, so   make reference to the [New Shader Block Docs](https://lovr.org/docs/v0.15.0/lovr.graphics.newShaderBlock) and [Shader Block Docs](https://lovr.org/docs/v0.15.0/ShaderBlock)
 Acooridng to the Devs, Mat4 and Vec3 are different to other datatypes and so some need to be unpacked and some don't
 
 The shader can also be used on the entire eye image by more complex usage of canvases
@@ -157,7 +159,7 @@ Shaders can (and probably should) be loaded from files
 this shader computes the 3d geometrical properties of the model, having access to parameters such as vertex position, transform matrices for the view camera, the projection matrix and more
 
 the default is 
-``` glsl
+```glsl
     vec4 position(mat4 projection, mat4 transform, vec4 vertex) {
     return vertex;
     }
@@ -200,13 +202,13 @@ pos = vec3(lovrModel * vertex); //gives 3d world position
 ### Fragment
 The fragment shader renders the pixel itself, getting the input from the Geometry Shader and computing from that, tetxures, diffuse and emissive texttures, and other factors the color of the pixel
 
-this is gthe default fragment shader
+this is the default fragment shader
 ```glsl
 vec4 color(vec4 graphicsColor, sampler2D image, vec2 uv) {
   return graphicsColor * lovrDiffuseColor * lovrVertexColor * texture(image, uv);
 }
 ```
-with `uv` being the 2D coords of gthe face being rendered, normlaized in a [0.0 1.0] range
+with `uv` being the 2D coords of the face being rendered, normalized in a [0.0 1.0] range
 
 the standard header is 
 ```glsl
@@ -311,3 +313,49 @@ Lua is not batteries included, so we need a JSON parsing library.
 The fastest is [Lua-cJSON](https://github.com/bjornbytes/lua-cjson) which is a compiled plugin based on a C library, faster but also needs to be added to the APK.
 
 For pure Lua we have [luanjson](https://github.com/grafi-tt/lunajson) and [json.lua](https://github.com/rxi/json.lua), both valid and quite efficent, with no need to compile or inject libraries, and fast enough for simple website API access
+
+
+## OOP
+
+Lua by itsef has no OOP methids. Classes and Objects are not available. Some classes can implement this, but these can be easily built as needed by using Tables and Metatables
+
+
+https://docs.otland.net/lua-guide/concepts/metatables
+https://www.lua.org/pil/16.html
+https://lua-users.org/wiki/ObjectOrientedProgramming
+http://www.lua.org/pil/13.4.1.html
+
+### Objects
+Tables are the fundamental associative arrays of Lua. These can be used to build dictionaries, lists, vectors, arrays and objects.
+
+Simply define a function as
+
+```lua
+obj={}
+function obj.method(self)
+    -- do stuff
+end
+```
+and you have a valid object. 
+
+### Classes
+Here we need the metatables. These are advanced tables that can define more complex properties such as interation through operatores like `+` or `==`, but also thngs like length, calling the table like a function, what to do when a certain value is called and what to do whena  new value is defined.
+
+The core question is defining standard keys and values for standard functions, those of the class, so each instance can call the same functions but with their values.
+This function is covered by the `__index` metatable, which defines where else to go to check for unkown indeces
+
+This is acheived by defining the functions for the class on an empty or minimal table, then at initialization of the instance, we initiaize a new table with the needed values, asssociate the insatne wth the class via the `__index` metatable and returning the insatnce. 
+Each instance will access the methods of the class unless overridden and any usage of `self` will be in reference to the instance, not the class
+
+```lua
+Class = {}  -- empty table used by class
+
+function Class.new(self, val1, val_2) --define generting method
+    local instance = {
+        key_1 = val_1,
+        key_2 = val_2
+    } -- crate table for instance and fill with datas
+    setmetatable(instance, { __index = Class }) --associate the instance with the class object and inherit the methods and properties
+    return instance -- return the instance, not the class
+end
+```
