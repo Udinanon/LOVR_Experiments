@@ -1,7 +1,5 @@
 ---@diagnostic disable: redundant-parameter
 
-require "GrabPoint"
-
 Teapot_controller = {
     utah = {
         model = lovr.graphics.newModel("Assets/utah.stl"),
@@ -18,13 +16,7 @@ Teapot_controller = {
         position = lovr.math.newVec3(),
         visible = false,
         size = {.8, .6},
-        material = lovr.graphics.newMaterial(),
-        knob_offset = { h = lovr.math.newVec3(0.1, 0, 0), v = lovr.math.newVec3(0, -0.35, 0) },
-        knob_size = lovr.math.newVec3(.1, .04, 10),
-        grab_points = { GrabPoint:new(lovr.math.newVec3(), 0.02),
-            GrabPoint:new(lovr.math.newVec3(), 0.02), 
-            GrabPoint:new(lovr.math.newVec3(), 0.02)
-        }
+        material = lovr.graphics.newMaterial()
     },
 }
 
@@ -69,7 +61,7 @@ function Teapot_controller:generate_board_image()
         -- 0 ==  px_zero
         -- 1 ==  px_zero - 1 * px_scale
         local px_y = px_zero - y * px_scale
-        px_y = math.min(math.max(px_y, 0), 600)
+        px_y = math.min(math.max(px_y, 0), 599)
         image:setPixel(i, px_y, 0, 1, 0)
     end
     local texture = lovr.graphics.newTexture(image, { format = "rgb", mipmaps = false })
@@ -82,11 +74,6 @@ function Teapot_controller.board:move_and_invert_board()
     local device = "hand/right"
     self.position = lovr.math.newVec3(lovr.headset.getPosition(device))
     self.rotation = lovr.math.newQuat(lovr.headset.getOrientation(device))
-    for i = -1, 1 do
-        local point_pos = self.position + self.rotation:mul(self.knob_offset.v + i * self.knob_offset.h)
-        self.grab_points[i+2]:set_pos(point_pos)
-    end
-
 end
 
 function Teapot_controller:draw_all()
@@ -99,15 +86,6 @@ end
 function Teapot_controller.board:draw_board()
     local w, h = unpack(self.size)
     lovr.graphics.plane(self.material, self.position, w, h, self.rotation)
-    for i= -1, 1 do
-        local cube_pos = self.position  + self.rotation:mul(self.knob_offset.v + i * self.knob_offset.h)
-        lovr.graphics.setColor(.6, .6, .6)
-        --lovr.graphics.cube("fill", cube_pos, 0.05, self.rotation)
-        lovr.graphics.setColor(1, 1, 1)
-    end
-    for _, point in ipairs(self.grab_points) do
-        point:draw()
-    end
 end
 
 function Teapot_controller.utah:update(dt)
@@ -119,3 +97,15 @@ function Teapot_controller.utah:update(dt)
     self.velocity = lovr.math.newVec3(self.velocity + acceleration * dt)
 end
 
+function Teapot_controller.utah:teleport(position)
+    self.position = lovr.math.newVec3(position)
+    self.velocity = lovr.math.newVec3(0)
+end
+
+function Teapot_controller:randomize()
+
+    self.utah.k1 = math.random(100) / 20 
+    self.utah.k2 = math.random(100) / 20 
+    self.utah.k3 = math.random(100) / 20 
+    self:generate_board_image()
+end

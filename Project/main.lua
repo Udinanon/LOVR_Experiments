@@ -1,5 +1,5 @@
 ---@diagnostic disable: deprecated, redundant-parameter, lowercase-global
-world = lovr.physics.newWorld(0, -9.81, 0, true, {"hand", "grabpoint"})  --- must be before teapot for GrabPoints to be valid
+world = lovr.physics.newWorld()
 
 require "TeaPot"
 local icosphere = require 'icosphere'
@@ -23,15 +23,6 @@ function lovr.load()
 
   teapot = Teapot_controller
   teapot:generate_board_image()
-  grab = { 
-    active = false,
-    hand = nil,
-    offset = lovr.math.newVec3(),
-    in_range = false,
-    base_rot = lovr.math.newQuat()
-  }
-  --print(teapot.board.grab_points[3].collider:getTag())
-
 
   shader = lovr.graphics.newShader('unlit', {})
   lovr.graphics.setShader(shader)
@@ -40,12 +31,7 @@ function lovr.load()
   
   mesh = lovr.graphics.newMesh(vertices, "lines", "static")
   mesh:setVertexMap(indices)
-  
-  l_hand_col = world:newMeshCollider(vertices, indices)
-  l_hand_col:setTag("hand")
 
-  r_hand_col = world:newMeshCollider(vertices, indices)
-  r_hand_col:setTag("hand")
 
   end
 
@@ -53,26 +39,6 @@ function lovr.load()
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
   -- update physics, like magic
-  
-  l_hand_col:setPose(lovr.headset.getPose("hand/left"))
-  r_hand_col:setPose(lovr.headset.getPose("hand/right"))
-  
-  
-  
-  world:computeOverlaps()
-  for shapeA, shapeB in world:overlaps() do
-    local areColliding = world:collide(shapeA, shapeB)
-    if areColliding then
-      if shapeB:getCollider():getTag() == "hand" and shapeA:getCollider():getTag() == "grabpoint" then
-        print(shapeB:getCollider():getTag(), shapeA:getCollider():getTag(), areColliding)
-        
-        
-      end
-    end
-    
-    --can get tags to work but 1 they don't seem to react to the hands and points interacting 2 they only have the shape, not  the entire object, we need to see how to call back to it
-    --print(shapeA, shapeB, areColliding)
-  end
   
   world:update(dt)
   if walls == 0 then
@@ -90,44 +56,22 @@ function lovr.update(dt)
     -- x is hand, y is utah
     teapot.utah:update(dt)
 
-    -- just use a fuking slider jesus
-    if lovr.headset.wasPressed("right", "grip") and teapot.board.visible and not grab.active then
-      local knob_pos = teapot.board.position + teapot.board.knob_offset
-      local hand_pos = vec3(lovr.headset.getPosition(grab.hand))
-      local offset = (knob_pos - hand_pos):length()
-      if offset < 0.15 then
-        grab.active = true
-        grab.hand = "right"
-        grab.offset:set(offset)
-        local v = vec3(0, 1, 0)
-        local hand_conj = lovr.math.newQuat(lovr.headset.getOrientation("right")):conjugate()
-        v = hand_conj:mul(v)
-        local angle = math.atan2(v[3], v[1])
-        --print("v", v)
-        --print("angle", angle)
-      end
-    end
-
-    if grab.active then
-      
-      local handRotation = quat(lovr.headset.getOrientation(grab.hand))
-      handRotation:mul(grab.base_rot)
-
-      if lovr.headset.wasReleased(grab.hand, 'grip') then
-        grab.active = false
-      end
-      local hand_pos = vec3(lovr.headset.getPosition(grab.hand))
-      local knob_pos = teapot.board.position + teapot.board.knob_offset
-      local offset = (knob_pos - hand_pos):length()
-      if offset > 0.3 then
-        grab.active = false
-      end
-    end
-
     -- if left trigger is pressed
     if lovr.headset.wasPressed("right", "trigger") then
       teapot.board:move_and_invert_board()
     end
+
+    if lovr.headset.wasPressed("right", "grip") then
+      teapot:randomize()
+
+    end
+
+
+    if lovr.headset.wasPressed("left", "trigger") then
+      teapot.utah:teleport(lovr.math.newVec3(lovr.headset.getPosition("hand/left")))
+
+    end
+
 
   end
 
@@ -145,14 +89,11 @@ end
 
 -- this draws obv
 function lovr.draw()
-  -- draw white spheres for the hands
-
-
-  --teapot.utah.model:draw(teapot.utah.position, .01)
-
-
+  
+  -- call the teapot to draw its compponents
   teapot:draw_all()
-
+  
+  -- draw white spheres for the hands
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = vec3(lovr.headset.getPosition(hand))
     local hand_quat = quat(lovr.headset.getOrientation(hand))
