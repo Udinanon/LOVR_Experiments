@@ -1,7 +1,6 @@
 ---@diagnostic disable: deprecated, undefined-field, lowercase-global
 
 
-
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   -- prepare for the color wheel thing
@@ -21,21 +20,18 @@ function lovr.load()
   cubes = {}
   volumes = {}
   walls = 1
+  
+  
+  require "Bodies"
+  
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
     -- check uf no state is normal
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
+  
 
-  bodies={}
-  sun = {
-    collider = world:newSphereCollider(0, 1, 0, 0.08),
-    color = 0xffff99,
-    size = 0.08,
-    mass = 100
-  }
-  sun.collider:setKinematic(true)
 
   to_draw={}
   vec_color = {0, 1, 1, 1}
@@ -57,43 +53,20 @@ function lovr.update(dt)
 
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
+      local curr_color = shallowCopy(color)
+      body = Body:new(curr_color, lovr.math.newVec3(lovr.headset.getPosition("right")),
+        lovr.math.newVec3(lovr.headset.getVelocity("right")))
+
       print("HERE")
       -- create cube there with color and shift it slightly
-      
-      local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
-      local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
-      local vx, vy, vz = lovr.headset.getVelocity("right")
-      local curr_color = shallowCopy(color)
-      local ball = world:newSphereCollider(x, y, z, .02)
-      ball:setKinematic(false)
-      ball:setGravityIgnored(true)
-      ball:setLinearDamping(0.000)
-      ball:setMass(1)
-      ball:setLinearVelocity(vx, vy, vz)
-
-      
-      local body = { color = curr_color, size = .02, collider = ball }
       color[1] = color[1]+40
 
       table.insert(bodies, body)
     end 
 
-    local sun_pos = vec3(sun.collider:getPosition())
+    local sun_pos = lovr.math.newVec3(sun.collider:getPosition())
     for i, this_body in ipairs(bodies) do
-      local body_position = lovr.math.newVec3(this_body.collider:getPosition())
-      
-      local relative_pos = body_position - sun_pos
-      local distance = relative_pos:length()
-      local gravity = -.01 * sun.mass * this_body.collider:getMass() / (distance * distance)
-      local force = relative_pos:mul(gravity)
-      
-      local curr_color = shallowCopy(vec_color)
-      local end_pos = body_position + force
-      local force_vec = { start = body_position, fin = end_pos, color = curr_color }
-      vec_color[1] = vec_color[1] + 40
-      table.insert(to_draw, force_vec)
-
-      this_body.collider:applyForce(force)
+      this_body:apply_force(sun_pos)
     end
 
     -- if left trigger is pressed
@@ -166,6 +139,13 @@ function lovr.draw()
   vec_color[1] = 0
   lovr.graphics.setColor(1, 1, 1)
 
+  -- draw the bodies
+  local sun_position = vec3(sun.collider:getPosition())
+  for i, body in ipairs(bodies) do
+    body:draw_sphere()
+    body:draw_speed_vec()
+    body:draw_force_vec(sun_position)
+  end
 
   if State:isNormal() then
     drawHands(0xffffff)
