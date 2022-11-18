@@ -50,6 +50,14 @@ function lovr.update(dt)
       world:newBoxCollider(0, 2, -depth/2, width, 4, 0.1):setKinematic(true)
       walls = 1
   end
+  
+  if not State["B"]then
+    local sun_pos = lovr.math.newVec3(sun.collider:getPosition())
+    for i, this_body in ipairs(bodies) do
+      this_body:apply_force(sun_pos)
+    end
+
+  end
 
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
@@ -57,28 +65,37 @@ function lovr.update(dt)
       body = Body:new(curr_color, lovr.math.newVec3(lovr.headset.getPosition("right")),
         lovr.math.newVec3(lovr.headset.getVelocity("right")))
 
+        -- create cube there with color and shift it slightly
+        color[1] = color[1]+40
+        
+        table.insert(bodies, body)
+      end 
+      
+      -- if left trigger is pressed
+    if lovr.headset.wasPressed("left", "trigger") then
       print("HERE")
-      -- create cube there with color and shift it slightly
-      color[1] = color[1]+40
+      local sun_pos = lovr.math.newVec3(sun.collider:getPosition())
+      local hand_pos = vec3(lovr.headset.getPosition("left"))
+      local hand_quat = quat(lovr.headset.getOrientation("left"))
+      local x_axis = lovr.math.newVec3(-1, 0, 0)
+
+      x_axis = hand_quat:mul(x_axis):normalize()
+      local distance_vec = (sun_pos-hand_pos):normalize()
+      local speed_vec = distance_vec:cross(x_axis)
+      local speed_mod = math.sqrt(.01 * (sun.mass + 1) / distance_vec:length()) 
+      local curr_color = shallowCopy(color)
+      
+      body = Body:new(curr_color, lovr.math.newVec3(lovr.headset.getPosition("left")),
+        speed_vec:mul(speed_mod))
+      body.draw_force = false
+      body:compute_orbit(x_axis)
+      body.draw_orbit = true
+
+      print("HERE")
+      color[1] = color[1] + 40
 
       table.insert(bodies, body)
-    end 
 
-    local sun_pos = lovr.math.newVec3(sun.collider:getPosition())
-    for i, this_body in ipairs(bodies) do
-      this_body:apply_force(sun_pos)
-    end
-
-    -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "trigger") then
-      -- generate a physics box there
-      local x, y, z = lovr.headset.getPosition("left")
-      local box = world:newBoxCollider(x, y, z, .10)
-      -- the velocity thing feels weird but there is nouest headset.getAccelleration
-      -- maybe making a custom function but eh
-      local vx, vy, vz = lovr.headset.getVelocity("left")
-      box:setLinearVelocity(vx, vy, vz)
-      table.insert(boxes, box)
     end
   end
 
@@ -114,14 +131,6 @@ function lovr.draw()
   lovr.graphics.sphere(vec3(sun.collider:getPosition()), 0.08)
   lovr.graphics.setColor(1, 1, 1)
 
-
-  --local relative_pos = sun_pos:sub(hand_pos)
-
-
-  --local distance = relative_pos:length()
-  --local gravity = sun.mass * 1 / (distance * distance)
-  --local force = relative_pos:mul(gravity)
-  
   if not State["A"] then
     for i, elem in ipairs(to_draw) do
       print("drawing elem ")
@@ -129,10 +138,8 @@ function lovr.draw()
       print(elem.fin)
       local elem_color = elem.color
       local r, g, b, a = HSVToRGB(unpack(elem_color))
-      lovr.graphics.setColor(r, g, b, a)
-      
-      lovr.graphics.line(elem.start, elem.fin)
-      
+      lovr.graphics.setColor(r, g, b, a) 
+      lovr.graphics.line(elem.start, elem.fin) 
     end
   end
   to_draw = {}
@@ -142,9 +149,7 @@ function lovr.draw()
   -- draw the bodies
   local sun_position = vec3(sun.collider:getPosition())
   for i, body in ipairs(bodies) do
-    body:draw_sphere()
-    body:draw_speed_vec()
-    body:draw_force_vec(sun_position)
+    body:draw(sun_position)
   end
 
   if State:isNormal() then
