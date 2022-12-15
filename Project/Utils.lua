@@ -1,5 +1,71 @@
+local Utils = {
+    vectors = {},
+    vec_color = {0, 1, 1, 1},
+    labels = {}
+}
+
+-- vector functions
+
+function Utils.addVector(origin, vector, color, keep_alive)
+    if color == nil then
+        local curr_color = Utils.shallowCopy(Utils.vec_color)
+        color = {Utils.HSVToRGB(unpack(curr_color))}
+        Utils.vec_color[1] = Utils.vec_color[1]+2
+    end
+    if keep_alive == nil then
+        keep_alive = false
+    end
+    local vector = {origin = origin, vec = vector, color =  color, keep_alive = keep_alive}
+    print(vector.origin, vector.vec)
+    table.insert( Utils.vectors, vector)
+end
+
+function Utils.drawVectors()
+    local new_vectors = {}
+    for _, vector in ipairs(Utils.vectors) do
+        local end_point = vector.vec + vector.origin
+        lovr.graphics.setColor(unpack(vector.color))
+        lovr.graphics.line(vector.origin, end_point)
+        lovr.graphics.setColor(1, 1, 1)
+        if vector.keep_alive then
+          table.insert( new_vectors, vector)
+        end
+    end
+    Utils.vectors = new_vectors
+end
+
+-- labels functions
+
+function Utils.addLabel(text, position, keep_alive, size)
+    if keep_alive == nil then
+        keep_alive = false
+    end
+    if size == nil then
+        size = 0.1
+    end
+    local label = {text = text, position = position, keep_alive = keep_alive, size = size}
+    table.insert( Utils.labels, label )
+end
+
+function Utils.drawLabels()
+    local new_labels = {}
+    lovr.graphics.setColor(1, 1, 1)
+    local head_rot = quat(lovr.headset.getOrientation("head"))
+    for _, label in ipairs(Utils.labels) do
+        local rotation = head_rot
+        lovr.graphics.print(label.text, label.position, label.size, rotation)
+        if label.keep_alive then
+            table.insert(new_labels, label)
+        end
+    end
+    Utils.vectors = new_labels
+end
+
+
+-- Misc functions
+
 -- utility function for the rainbow thing
-function HSVToRGB(h, s, v, a)
+function Utils.HSVToRGB(h, s, v, a)
     local c = v * s
     local x = c * (1 - math.abs((h / 60) % 2 - 1))
     local m = v - c
@@ -20,7 +86,7 @@ function HSVToRGB(h, s, v, a)
 end
 
 -- useful as LUA does the Python thing of not copying stuff
-function shallowCopy(orig)
+function Utils.shallowCopy(orig)
     local orig_type = type(orig)
     local copy
     if orig_type == 'table' then
@@ -34,7 +100,7 @@ function shallowCopy(orig)
     return copy
 end
 
-function drawHands(color)
+function Utils.drawHands(color)
     -- draw colored spheres for the hands
     for i, hand in ipairs(lovr.headset.getHands()) do
         local position = vec3(lovr.headset.getPosition(hand))
@@ -60,7 +126,7 @@ function drawHands(color)
     end
 end
 
-function addVolumes()
+function Utils.addVolumes()
     -- get hand positions
     local r_pos = vec3(lovr.headset.getPosition("right"))
     local l_pos = vec3(lovr.headset.getPosition("left"))
@@ -144,7 +210,7 @@ function addVolumes()
 
 end
 
-function drawAxes()
+function Utils.drawAxes()
     lovr.graphics.setColor(0, 1, 0)
     lovr.graphics.line(0, 0, 0, 1, 0, 0)
     lovr.graphics.setColor(0, 0, 1)
@@ -153,7 +219,7 @@ function drawAxes()
     lovr.graphics.line(0, 0, 0, 0, 0, 1)
 end 
 
-function drawBounds()
+function Utils.drawBounds()
     local width, height = lovr.headset.getBoundsDimensions()
     if width == 0 or height == 0 then
         return
@@ -167,3 +233,5 @@ function drawBounds()
     lovr.graphics.box("line", 0, 2, height / 2, width, 4, 0.1)
     lovr.graphics.box("line", 0, 2, -height / 2, width, 4, 0.1)
 end
+
+return Utils

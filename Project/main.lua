@@ -1,6 +1,6 @@
 ---@diagnostic disable: deprecated
 
-require "Utils"
+local Utils = require "Utils"
 
 
 -- run on boot of the program, where all the setup happes
@@ -49,9 +49,10 @@ function lovr.update(dt)
       -- create cube there with color and shift it slightly
       local th_x, th_y = lovr.headset.getAxis('right', 'thumbstick')
       local x, y, z, angle, ax, ay, az = lovr.headset.getPose("right")
-      local curr_color = shallowCopy(color)
+      local curr_color = Utils.shallowCopy(color)
       local cube = {["pos"] = {x, y, z, .10, angle, ax, ay, az}, ["color"] = curr_color}
       color[1] = color[1]+2
+      Utils.addVector(lovr.math.newVec3(x, y, z), lovr.math.newVec3(1, 1, 1),nil, true)
 
       -- the th_x gives us multiple cube sizes
       if th_x >= 0.75 then
@@ -76,6 +77,7 @@ function lovr.update(dt)
       local vx, vy, vz = lovr.headset.getVelocity("left")
       box:setLinearVelocity(vx, vy, vz)
       table.insert(boxes, box)
+      Utils.addLabel("box", lovr.math.newVec3(x, y, z))
     end
   end
 
@@ -98,14 +100,17 @@ end
 -- this draws obv
 function lovr.draw()
   -- draw white spheres for the hands
+  Utils.drawVectors()
+  Utils.drawLabels()
+
   if State:isNormal() then
-    drawHands(0xffffff)
+    Utils.drawHands(0xffffff)
   end
   if State["A"] then
-    drawHands(0x0000ff)
+    Utils.drawHands(0x0000ff)
   end
   if State["B"] then
-    drawHands(0x00ff00)
+    Utils.drawHands(0x00ff00)
   end
 
   -- draw the boxes
@@ -119,7 +124,7 @@ function lovr.draw()
   for i, cube in ipairs(cubes) do
     local cube_color=cube["color"]
     local position=cube["pos"]
-    local r, g, b, a=HSVToRGB(unpack(cube_color))
+    local r, g, b, a = Utils.HSVToRGB(unpack(cube_color))
     lovr.graphics.setColor(r, g, b, a)
     lovr.graphics.cube("line", unpack(position))
   end
@@ -137,9 +142,9 @@ function lovr.draw()
   
   -- A state, add collider volumes mode
   if State["A"] then
-    addVolumes()
+    Utils.addVolumes()
   end
 
-  drawAxes()
-  drawBounds()
+  Utils.drawAxes()
+  Utils.drawBounds()
 end
