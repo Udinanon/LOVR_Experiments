@@ -31,8 +31,9 @@ function Graphs:new(size, scale, resolution, graph_type, hand)
         image = image,
         graph_type = graph_type, -- zero center or BL corner
         hand = hand, -- hand to reference
-        visibile = true, --if board is drawn 
-        material = material
+        visible = false, --if board is drawn 
+        material = material,
+        texture = texture
     }
     setmetatable(instance, { __index = Graphs }) --associate the instance with the class object and inherit the methods and properties
     local key = #Graphs.all_graphs + 1
@@ -72,15 +73,14 @@ function Graphs:drawPixel(coords, color)
     x = Utils.clamp(x, 0, self.resolution - 1)
     y = Utils.clamp(y, 0, self.resolution - 1)
     self.image:setPixel(x, y, Utils.HSVAToRGBA(color))
-    local texture = lovr.graphics.newTexture(self.image, { format = "rgb", mipmaps = false })
-    self.material:setTexture(texture)
 end
 
 -- Draw the board in VR
 function Graphs:draw()
-    if not self.visibile then
+    if not self.visible then
         return
     end
+    self.texture:replacePixels(self.image)
     lovr.graphics.plane(self.material, self.position, self.size, self.size, self.orientation)
     
 end
