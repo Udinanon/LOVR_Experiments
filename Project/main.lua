@@ -37,28 +37,12 @@ function lovr.update(dt)
   -- update physics, like magic
   world:update(dt)
 
-  if walls == 0 then
-      local width, depth = lovr.headset.getBoundsDimensions()
-      world:newBoxCollider(width/2, 2, 0, 0.1, 4, depth):setKinematic(true)
-      world:newBoxCollider(-width/2, 2, 0, 0.1, 4, depth):setKinematic(true)
-      world:newBoxCollider(0, 2, depth/2, width, 4, 0.1):setKinematic(true)
-      world:newBoxCollider(0, 2, -depth/2, width, 4, 0.1):setKinematic(true)
-      walls = 1
-  end
-  
-
-
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
       local curr_color = Utils.shallowCopy(color)
-      local body = SolarSystem:new(curr_color, lovr.math.newVec3(lovr.headset.getPosition("right")),
-      lovr.math.newVec3(lovr.headset.getVelocity("right")))
-      Utils.addVector(lovr.math.newVec3(lovr.headset.getPosition("right")),
-      lovr.math.newVec3(lovr.headset.getVelocity("right")), curr_color, true)
+      Utils.addVector(lovr.math.newVec3(lovr.headset.getPosition("right")), lovr.math.newVec3(lovr.headset.getVelocity("right")), curr_color, true)
       -- create cube there with color and shift it slightly
       color[1] = color[1]+40
-      
-      table.insert(SolarSystem.bodies, body)
     end 
       
       -- if left trigger is pressed
@@ -72,7 +56,7 @@ function lovr.update(dt)
   -- update blackboard
   local time = lovr.timer.getTime()
   for i, hand in ipairs(lovr.headset.getHands()) do
-    local position = lovr.headset.getPosition(hand)
+    local position = lovr.math.vec3(lovr.headset.getPosition(hand))
     Graph:drawPoint({position.x, position.z}, {i*100, 1, 1, 1})
   end
   
@@ -99,10 +83,18 @@ function lovr.update(dt)
     end
   end
 
+  local start_point = lovr.math.newVec3(1, 1, 1)
+  local x_axis = lovr.math.newVec3(1, 0, 0)
+  Utils.addVector(start_point, x_axis, { 0, 1, 1, 1 })
+  local quaternion = lovr.math.newQuat()
+  Utils.addVector(start_point, quaternion:direction(), { .5, .1, 1, 1 })
+
 end
 
 -- this draws obv
 function lovr.draw()
+
+
 
   Utils.drawVectors()
   Utils.drawLabels()

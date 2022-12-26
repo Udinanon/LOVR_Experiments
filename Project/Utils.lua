@@ -14,21 +14,29 @@ function Utils.addVector(origin, vector, color, keep_alive)
         color = {Utils.HSVAToRGBA(unpack(curr_color))}
         Utils.vec_color[1] = Utils.vec_color[1]+2
     end
-    keep_alive = keep_alive or false
-    local vector = {origin = origin, vec = vector, color =  color, keep_alive = keep_alive}
-    print(vector.origin, vector.vec)
-    table.insert( Utils.vectors, vector)
+    local keep_alive = keep_alive or false
+    local end_point = lovr.math.newVec3(vector + origin)
+    local direction = lovr.math.newQuat(vector:normalize())
+    local vector = {
+        origin = origin, 
+        vec = vector, 
+        color =  color, 
+        keep_alive = keep_alive,
+        direction = direction,
+        end_point = end_point   
+    }
+    table.insert(Utils.vectors, vector)
 end
 
 function Utils.drawVectors()
     local new_vectors = {}
     for _, vector in ipairs(Utils.vectors) do
-        local end_point = vector.vec + vector.origin
         lovr.graphics.setColor(unpack(vector.color))
-        lovr.graphics.line(vector.origin, end_point)
+        lovr.graphics.cylinder(vector.end_point, .04, vector.direction, 0, .02, false)
+        lovr.graphics.line(vector.origin, vector.end_point)
         lovr.graphics.setColor(1, 1, 1)
         if vector.keep_alive then
-          table.insert( new_vectors, vector)
+          table.insert(new_vectors, Utils.shallowCopy(vector))
         end
     end
     Utils.vectors = new_vectors
@@ -37,13 +45,19 @@ end
 -- labels functions
 
 function Utils.addLabel(text, position, keep_alive, size)
-    if keep_alive == nil then
-        keep_alive = false
-    end
-    if size == nil then
-        size = 0.1
-    end
-    local label = {text = text, position = position, keep_alive = keep_alive, size = size}
+    local text = text or "debug"
+    local position = position or {0, 0, 0}
+    local keep_alive = keep_alive or false
+    local size = size or 0.1
+    local offset = lovr.math.vec3(0.15, 0.15, 0)
+    local label = {
+        text = text, 
+        position = position, 
+        keep_alive = keep_alive, 
+        size = size,
+        offset = offset
+    }
+
     table.insert( Utils.labels, label )
 end
 
@@ -58,7 +72,7 @@ function Utils.drawLabels()
             table.insert(new_labels, label)
         end
     end
-    Utils.vectors = new_labels
+    Utils.labels = new_labels
 end
 
 
