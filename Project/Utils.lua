@@ -1,7 +1,9 @@
 local Utils = {
     vectors = {},
     vec_color = {0, 1, 1, 1},
-    labels = {}
+    labels = {},
+    boxes = {},
+    volumes = {}
 }
 
 -- vector functions
@@ -9,12 +11,10 @@ local Utils = {
 function Utils.addVector(origin, vector, color, keep_alive)
     if color == nil then
         local curr_color = Utils.shallowCopy(Utils.vec_color)
-        color = {Utils.HSVToRGB(unpack(curr_color))}
+        color = {Utils.HSVAToRGBA(unpack(curr_color))}
         Utils.vec_color[1] = Utils.vec_color[1]+2
     end
-    if keep_alive == nil then
-        keep_alive = false
-    end
+    keep_alive = keep_alive or false
     local vector = {origin = origin, vec = vector, color =  color, keep_alive = keep_alive}
     print(vector.origin, vector.vec)
     table.insert( Utils.vectors, vector)
@@ -64,8 +64,17 @@ end
 
 -- Misc functions
 
+function Utils.clamp(x, min, max)
+    if x < min then return min end
+    if x > max then return max end
+    return x
+end
+
 -- utility function for the rainbow thing
-function Utils.HSVToRGB(h, s, v, a)
+function Utils.HSVAToRGBA(h, s, v, a)
+    if type(h) == "table" and s == nil then
+        h, s, v, a = unpack(h)
+    end
     local c = v * s
     local x = c * (1 - math.abs((h / 60) % 2 - 1))
     local m = v - c
@@ -232,6 +241,26 @@ function Utils.drawBounds()
     lovr.graphics.box("line", -width / 2, 2, 0, 0.1, 4, height)
     lovr.graphics.box("line", 0, 2, height / 2, width, 4, 0.1)
     lovr.graphics.box("line", 0, 2, -height / 2, width, 4, 0.1)
+end
+
+function Utils.drawBoxes()
+    -- draw the boxes
+    for i, box in ipairs(Utils.boxes) do
+        local x, y, z = box:getPosition()
+        lovr.graphics.setColor(0.8, 0.8, 0.8)
+        lovr.graphics.cube('fill', x, y, z, .1, box:getOrientation())
+    end    
+end
+
+function Utils.drawVolumes()
+    -- draw collider volumes
+    for i, volume in ipairs(Utils.volumes) do
+        local x, y, z = volume:getPosition()
+        local vol_shape = volume:getShapes()[1]
+        local width, height, depth = vol_shape:getDimensions()
+        lovr.graphics.setColor(0, 0.1, 0.12)
+        lovr.graphics.box('fill', x, y, z, width, height, depth, volume:getOrientation())
+    end
 end
 
 return Utils
