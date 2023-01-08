@@ -12,12 +12,7 @@ function lovr.load()
   world = lovr.physics.newWorld()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
-  -- generate the floor, Kinematic means infinite mass kinda
-  local width, depth = lovr.headset.getBoundsDimensions()
 
-  walls = 1
-  
-  
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
@@ -29,6 +24,12 @@ function lovr.load()
 
   Graph = Graphs:new()
   Graph:setVisible()
+  Graph:drawAxes()
+
+  BlackBoard = Graphs:new(1, 4, nil)
+  BlackBoard:setVisible()
+  BlackBoard:drawAxes()
+  BlackBoard:setPose({ 0, 1.5, 1 }, { 0, 0, -1, 0 })
 
 end
 
@@ -59,6 +60,7 @@ function lovr.update(dt)
     local position = lovr.math.vec3(lovr.headset.getPosition(hand))
     Graph:drawPoint({position.x, position.z}, {i*100, 1, 1, 1})
   end
+
   
 
 
@@ -66,6 +68,7 @@ function lovr.update(dt)
   if lovr.headset.wasPressed("left", 'grip') and lovr.headset.wasPressed("right", 'grip') then
     -- clear all
       Graph:clean()
+      BlackBoard:clean()
   end
 
   if lovr.headset.wasPressed("right", "a") then

@@ -84,7 +84,15 @@ function Utils.clamp(x, min, max)
     return x
 end
 
--- utility function for the rainbow thing
+---Convert HSVA color to RGBS
+---@param h number/table 
+---@param s number
+---@param v number
+---@param a number
+---@return number
+---@return number
+---@return integer
+---@return any
 function Utils.HSVAToRGBA(h, s, v, a)
     if type(h) == "table" and s == nil then
         h, s, v, a = unpack(h)
@@ -234,11 +242,11 @@ function Utils.addVolumes()
 end
 
 function Utils.drawAxes()
-    lovr.graphics.setColor(0, 1, 0)
-    lovr.graphics.line(0, 0, 0, 1, 0, 0)
-    lovr.graphics.setColor(0, 0, 1)
-    lovr.graphics.line(0, 0, 0, 0, 1, 0)
     lovr.graphics.setColor(1, 0, 0)
+    lovr.graphics.line(0, 0, 0, 1, 0, 0)
+    lovr.graphics.setColor(0, 1, 0)
+    lovr.graphics.line(0, 0, 0, 0, 1, 0)
+    lovr.graphics.setColor(0, 0, 1)
     lovr.graphics.line(0, 0, 0, 0, 0, 1)
 end 
 
