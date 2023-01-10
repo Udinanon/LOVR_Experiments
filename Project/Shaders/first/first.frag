@@ -1,4 +1,3 @@
-
 in vec3 pos;
 uniform float time;
 vec4 color(vec4 graphicsColor, sampler2D image, vec2 uv) {

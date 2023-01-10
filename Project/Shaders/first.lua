@@ -1,0 +1,1 @@
+shader = lovr.graphics.newShader(lovr.filesystem.read("Shaders/first/first.vert"), lovr.filesystem.read("Shaders/first/first.frag"))

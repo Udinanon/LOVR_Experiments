@@ -2,7 +2,7 @@
 
 Utils = require "Utils"
 Graphs = require "Graphs"
--- shader = lovr.graphics.newShader(lovr.filesystem.read("shader.vert"),lovr.filesystem.read("shader.frag"))
+require "Shaders/multi_light/multi_light"
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   print("LODR LOAD")
@@ -21,13 +21,13 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
-
+  lovr.graphics.setShader(shader)
 end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
-  shader:send('viewPos', {lovr.headset.getPosition("head")})
-  shader:send("time", lovr.timer.getTime())
+  --shader:send('viewPos', {lovr.headset.getPosition("head")})
+  --shader:send("time", lovr.timer.getTime())
   -- update physics, like magic
   world:update(dt)
 

@@ -1,4 +1,5 @@
-shader = lovr.graphics.newShader(lovr.filesystem.read("shader.vert"), lovr.filesystem.read("shader.frag"))
+shader = lovr.graphics.newShader(lovr.filesystem.read("Shaders/marcherV1/marcherV1.vert"),
+  lovr.filesystem.read("Shaders/marcherV1/marcherV1.frag"))
 flight = {
     viewOffset = lovr.math.newVec3(0, 0, 0),
     thumbstickDeadzone = 0.3,
@@ -11,7 +12,7 @@ shader:send("scale", scale)
 shader:send("time", 0.0)
 palette = lovr.graphics.newTexture("./Assets/Palette1.png")
 shader:send("palette", palette)
-State["B"] = true
+
 
 function flight()
     local x, y = lovr.headset.getAxis('right', 'thumbstick')
