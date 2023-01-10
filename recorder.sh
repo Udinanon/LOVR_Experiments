@@ -1,0 +1,1 @@
+sleep 5; play -q -n -c1 synth sin %-12 sin %-9 sin %-5 sin %-2 fade q 0.1 1 0.1; adb exec-out screenrecord --verbose --bit-rate=25m --size 1920x1080 --time-limit=10 /sdcard/video.mp4; wait; adb pull /sdcard/video.mp4 ./Screens/video.mp4; wait; adb shell rm -f /sdcard/video.mp4; play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2 fade q 0.1 1 0.3

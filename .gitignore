@@ -2,8 +2,19 @@
 *.jpg
 *.png
 *.db
-/API Docs/
 *.stl
+*.log
+*.mkv
+*.gif
+/Engine/
+/Project/Assets/
+/API Docs/
+/Screens/
+/LibCurl/
+projects.md
+/Pyspace/
+/APK*/
+ltex*
 # Compiled Lua sources
 luac.out
 
