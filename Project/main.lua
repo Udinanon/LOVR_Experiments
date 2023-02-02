@@ -23,11 +23,11 @@ function lovr.load()
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
   Graph = Graphs:new()
-  Graph:setVisible()
+  --Graph:setVisible()
   Graph:drawAxes()
 
   BlackBoard = Graphs:new(1, 4, nil)
-  BlackBoard:setVisible()
+  --BlackBoard:setVisible()
   BlackBoard:drawAxes()
   BlackBoard:setPose({ 0, 1.5, 1 }, { 0, 0, -1, 0 })
 
@@ -86,16 +86,36 @@ function lovr.update(dt)
     end
   end
 
-  local start_point = lovr.math.newVec3(1, 1, 1)
-  local x_axis = lovr.math.newVec3(1, 0, 0)
-  Utils.addVector(start_point, x_axis, { 0, 1, 1, 1 })
-  local quaternion = lovr.math.newQuat()
-  Utils.addVector(start_point, quaternion:direction(), { .5, .1, 1, 1 })
 
 end
 
 -- this draws obv
 function lovr.draw()
+  local start_point = lovr.math.newVec3(-0, .5, .5)
+  Utils.addLabel("start_point", start_point)
+
+  local quaternion = lovr.math.newQuat()
+  Utils.addVector(start_point, quaternion:direction(), { .5, .1, 1, 1 })
+  Utils.addLabel("empty_quat", start_point + quaternion:direction())
+
+  local hand_quat = quat(lovr.headset.getOrientation("hand/right"))
+  
+  local x_axis = lovr.math.newVec3(-1, 0, 0)
+  local rotated_vec = hand_quat:mul(x_axis)
+  Utils.addVector(start_point, rotated_vec, { .5, .2, 1, 1 })
+  Utils.addLabel("hand_quat_x", start_point + rotated_vec)
+
+  local y_axis = lovr.math.newVec3(0, -1, 0)
+  local rotated_vec = hand_quat:mul(y_axis)
+  Utils.addVector(start_point, rotated_vec, { .5, .2, 1, 1 })
+  Utils.addLabel("hand_quat_y", start_point + rotated_vec)
+
+  local q2 = lovr.math.newQuat(vec3(0, -1, 0))
+  local tmp = lovr.math.newVec3(1, 0, 0)
+  local tmp = q2:mul(tmp)
+  --local tmp = hand_quat:mul(tmp)
+  Utils.addVector(start_point, tmp, {.5, .3, .8, 1})
+  Utils.addLabel("double_quat", start_point + tmp)
 
 
 

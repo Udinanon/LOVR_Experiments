@@ -362,3 +362,21 @@ function Class.new(self, val1, val_2) --define generting method
     return instance -- return the instance, not the class
 end
 ```
+
+## Tasks
+
+ADB commands obviously are key to any decently useful task
+
+Pipes can be extremely useful to move data between commands and functions
+
+`wait` can be used to wait for the previous command to finish
+
+`sleep n` waits n seconds before moving to the next command
+
+A very useful command to use in tasks is `play`. It can play audio files, but can also synthesize soundwaves from scratch
+```bash
+    play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2 fade q 0.1 1 0.3
+```
+Gives a very nice Organ-like sound
+
+
