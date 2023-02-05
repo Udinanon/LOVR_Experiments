@@ -380,3 +380,26 @@ A very useful command to use in tasks is `play`. It can play audio files, but ca
 Gives a very nice Organ-like sound
 
 
+
+
+## Moving to v0.16
+
+texture and images do not support `rgb` anymore, either transparency or other methods are needed
+
+Materials are now generated with a table of values, which are passed to the shader pipeline
+
+texture filtering is no longer set via `:setFilter()`, it seems to be declared at creation only
+
+textures are associated with materials at creation, idk if we can still update them the same way
+
+`lovr.graphics` seems to have been downsized heavilty, now using render passes, generated via `lovr.draw(pass)`
+
+cylinders and cones have different geometric descriptions, and it's unclear
+
+`graphics.print` is now `pass:text`
+
+some draw commands have been remixed, values moved around
+
+Operations that move data between CPU and GPU are now more complex, such as copying images into textures. These now require using a transfer pass, which has to be created and held until the end of the frame and submitted wit the draw pass. Submitting a pass ends the frame and any subsequent pass operations crashes LOVR.
+
+Materials are set at the pass, not at draw

@@ -23,11 +23,12 @@ function lovr.load()
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
   Graph = Graphs:new()
-  --Graph:setVisible()
+  Graph:setVisible()
   Graph:drawAxes()
 
-  BlackBoard = Graphs:new(1, 4, nil)
-  --BlackBoard:setVisible()
+  BlackBoard = Graphs:new(1, 4)
+--  BlackBoard:drawPoint({1, 1}, {1, 1, 1, 1})
+  BlackBoard:setVisible()
   BlackBoard:drawAxes()
   BlackBoard:setPose({ 0, 1.5, 1 }, { 0, 0, -1, 0 })
 
@@ -58,7 +59,7 @@ function lovr.update(dt)
   local time = lovr.timer.getTime()
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = lovr.math.vec3(lovr.headset.getPosition(hand))
-    Graph:drawPoint({position.x, position.z}, {i*100, 1, 1, 1})
+    Graph:drawPoint({position.x, position.z}, {10, 1, 1, 1})
   end
 
   
@@ -90,7 +91,7 @@ function lovr.update(dt)
 end
 
 -- this draws obv
-function lovr.draw()
+function lovr.draw(pass)
   local start_point = lovr.math.newVec3(-0, .5, .5)
   Utils.addLabel("start_point", start_point)
 
@@ -119,25 +120,28 @@ function lovr.draw()
 
 
 
-  Utils.drawVectors()
-  Utils.drawLabels()
+  Utils.drawVectors(pass)
+  Utils.drawLabels(pass)
 
-  -- draw blackboard
-  Graphs:drawAll()
   
   -- draw hands
   if State:isNormal() then
-    Utils.drawHands(0xffffff)
+    Utils.drawHands(pass, 0xffffff)
   end
   if State["A"] then
-    Utils.drawHands(0x0000ff)
+    Utils.drawHands(pass, 0x0000ff)
   end
   if State["B"] then
-    Utils.drawHands(0x00ff00)
+    Utils.drawHands(pass, 0x00ff00)
   end
 
-  Utils.drawBoxes()
-  Utils.drawVolumes()
-  Utils.drawAxes()
-  Utils.drawBounds()
+  -- draw blackboard
+  local transfer_pass = nil
+  transfer_pass = Graphs:drawAll(pass)
+
+  Utils.drawBoxes(pass)
+  Utils.drawVolumes(pass)
+  Utils.drawAxes(pass)
+  Utils.drawBounds(pass)
+  lovr.graphics.submit({ pass, transfer_pass })
 end
