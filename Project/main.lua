@@ -109,7 +109,7 @@ function lovr.update(dt)
   if lovr.headset.wasPressed("left", 'grip') and lovr.headset.wasPressed("right", 'grip') then
     -- clear all
       SolarSystem.destroyBodies()
-      Graph:destroy()
+      Graph:clean()
   end
 
   if lovr.headset.wasPressed("right", "a") then
@@ -137,8 +137,8 @@ function lovr.draw(pass)
 
   
   -- draw sun and bodies
-  SolarSystem:drawSun()
-  SolarSystem:drawBodies()
+  SolarSystem.drawSun(pass)
+  SolarSystem.drawBodies(pass)
 
   -- draw hands
   if State:isNormal() then

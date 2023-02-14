@@ -68,53 +68,52 @@ function SolarSystem:compute_orbit(axis)
 
 end
 
-function SolarSystem:draw(sun_position)
-    self:draw_sphere()
+function SolarSystem:draw(sun_position, pass)
+    self:draw_sphere(pass)
     if self.draw_speed then
-        self:draw_speed_vec()
+        self:draw_speed_vec(pass)
     end
     if self.draw_force then
-        self:draw_force_vec(sun_position)
+        self:draw_force_vec(sun_position, pass)
     end
     if self.draw_orbit then
-        self:draw_orbit_()
+        self:draw_orbit_(pass)
     end
 end
 
-function SolarSystem:draw_sphere()
-    local r, g, b, a = Utils.HSVAToRGBA(unpack(self.color))
-    lovr.graphics.setColor(r, g, b, a)
-    lovr.graphics.sphere(vec3(self.collider:getPosition()), self.radius)
+function SolarSystem:draw_sphere(pass)
+    pass:setColor(Utils.HSVAToRGBA(unpack(self.color)))
+    pass:sphere(vec3(self.collider:getPosition()), self.radius)
 end
 
-function SolarSystem:draw_speed_vec()
+function SolarSystem:draw_speed_vec(pass)
     local speed = vec3(self.collider:getLinearVelocity())
     local speed_mod = speed:length()
     
     local h, s, v = unpack(self.color)
     local r, g, b, a = Utils.HSVAToRGBA(h, speed_mod, v)
-    lovr.graphics.setColor(r, g, b, a)
+    pass:setColor(r, g, b, a)
 
-    lovr.graphics.line(vec3(self.collider:getPosition()), vec3(self.collider:getPosition()) + speed:normalize():div(8))
+    pass:line(vec3(self.collider:getPosition()), vec3(self.collider:getPosition()) + speed:normalize():div(8))
 end
 
-function SolarSystem:draw_force_vec(sun_position)
+function SolarSystem:draw_force_vec(sun_position, pass)
     local force = self:compute_force(sun_position)
     local force_mod = force:length()
 
     local h, s, v = unpack(self.color)
     local r, g, b, a = Utils.HSVAToRGBA(h, force_mod, v)
-    lovr.graphics.setColor(r, g, b, a)
+    pass:setColor(r, g, b, a)
 
-    lovr.graphics.line(vec3(self.collider:getPosition()), (vec3(self.collider:getPosition()) + force:normalize():div(8)))
+    pass:line(vec3(self.collider:getPosition()), (vec3(self.collider:getPosition()) + force:normalize():div(8)))
 end
 
-function SolarSystem:draw_orbit_()
+function SolarSystem:draw_orbit_(pass)
     local h, s, v = unpack(self.color)
     local r, g, b, a = Utils.HSVAToRGBA(h, s, v)
-    lovr.graphics.setColor(r, g, b, a)
+    pass:setColor(r, g, b, a)
 
-    lovr.graphics.circle("line", unpack(self.orbit_data))
+    pass:circle("line", unpack(self.orbit_data))
 end
 
 -- Class functions
@@ -126,16 +125,17 @@ function SolarSystem.applyGravity()
     end
 end
 
-function SolarSystem.drawSun()
-    lovr.graphics.setColor(SolarSystem.sun.color)
-    lovr.graphics.sphere(vec3(SolarSystem.sun.collider:getPosition()), SolarSystem.sun.size)
-    lovr.graphics.setColor(1, 1, 1)
+function SolarSystem.drawSun(pass)
+    pass:setColor(1, 1, 1, 1)
+    pass:setColor(SolarSystem.sun.color)
+    pass:sphere(vec3(SolarSystem.sun.collider:getPosition()), SolarSystem.sun.size)
+    pass:setColor(1, 1, 1)
 end
 
-function SolarSystem.drawBodies()
+function SolarSystem.drawBodies(pass)
     local sun_position = vec3(SolarSystem.sun.collider:getPosition())
     for i, body in ipairs(SolarSystem.bodies) do
-        body:draw(sun_position)
+        body:draw(sun_position, pass)
     end
 end
 
