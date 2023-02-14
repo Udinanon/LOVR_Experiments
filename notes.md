@@ -1,14 +1,16 @@
 # Notes
+
 ## Links
+
 ### LOVR
 [Official Docs](https://lovr.org/docs/Getting_Started)
-[LOVR GtHub](https://github.com/bjornbytes/lovr)
+[LOVR GitHub](https://github.com/bjornbytes/lovr)
 [LOVR Slack](https://app.slack.com/client/T59PJ1KCJ/C59QZ4V6Y)
 
 ## ADB
-More infod about ADB can be found at:
+More info about ADB can be found at:
  - [Official ADB Docs](https://developer.android.com/studio/command-line/adb)
- - [ADB CheatSheet](https://www.automatetheplanet.com/wp-content/uploads/2019/08/Cheat_sheet_ADB.pdf)
+ - [ADB Cheat Sheet](https://www.automatetheplanet.com/wp-content/uploads/2019/08/Cheat_sheet_ADB.pdf)
  - [Oculus ADB Docs](https://developer.oculus.com/documentation/native/android/ts-adb/)
 ### Useful Commands
 To identify all connected devices use 
@@ -16,7 +18,7 @@ To identify all connected devices use
     adb devices -l 
 
 To go wireless:
-connect via usb, give permission adn give adb permission
+connect via USB, give permission and give ADB permission
 
     $ adb tcpip 5555
     restarting in TCP mode port: 5555
@@ -55,12 +57,12 @@ To get a remote screenshot use
     adb exec-out screencap -p > Screenshots/screen_$(date +'%Y-%m-%d-%X').png
 
 
-From [here](https://android.stackexchange.com/questions/7686/is-there-a-way-to-see-the-devices-screen-live-on-pc-through-adb/154328#154328) we get a ADB command to get a fluid, although delayed, video stream
+From [here](https://android.stackexchange.com/questions/7686/is-there-a-way-to-see-the-devices-screen-live-on-pc-through-adb/154328#154328) we get an ADB command to get a fluid, although delayed, video stream
 
     adb exec-out screenrecord --output-format=h264 - |   ffplay -framerate 60 -probesize 32 -sync video  -
 
 
-we can launch any app via adb, with
+we can launch any app via ADB, with
 
     adb shell monkey -p  <Package name> 1
 with LODR being `org.lovr.hotswap` and LOVR being `org.lovr.app`
@@ -70,26 +72,26 @@ with LODR being `org.lovr.hotswap` and LOVR being `org.lovr.app`
 we can access the VrApi via ADB using 
 
     adb logcat -s VrApi
-which we can use to read various datapoints onthe state of the device
+which we can use to read various data points on the state of the device
 
 https://developer.oculus.com/documentation/native/android/po-per-frame-gpu/
 
 https://developer.oculus.com/documentation/native/android/ts-logcat-stats/
 
 
-We can also read GPU performance deatils using
+We can also read GPU performance details using
 
     adb shell ovrgpuprofiler -m
 
 https://developer.oculus.com/documentation/native/android/ts-ovrgpuprofiler/
 
 
-performance profiling might want to keep in mind that the CPU and GPU of Ocuulus devices dynamically handle the workload
+performance profiling might want to keep in mind that the CPU and GPU of Oculus devices dynamically handle the workload
 
 https://developer.oculus.com/documentation/native/android/mobile-power-overview/
 
 
-OVRMetrics is also a powerful tool to access realtime perfromance information while inside the device, using an overlay or reporting results to CSV. 
+OVRMetrics is also a powerful tool to access real-time performance information while inside the device, using an overlay or reporting results to CSV. 
 It can be accessed via the Unknown Resources panel or via some ADB commands 
 
 https://developer.oculus.com/documentation/native/android/ts-ovrmetricstool/
@@ -97,32 +99,32 @@ https://developer.oculus.com/documentation/native/android/ts-ovrmetricstool/
 https://developer.oculus.com/documentation/native/android/ts-ovr-best-practices/
 
 
-There are even more methods and tols to track real time performance
+There are even more methods and tools to track real time performance
 
 https://developer.oculus.com/documentation/native/android/po-book-performance/
 
 ## Controller
 
-No support is availabe on Android rght now. only on windows through the lovr-joystick library
+No support is available on Android right now. Only on Windows through the lovr-joystick library
 
 ## LOVR and LODR
-These two versions are basically the same, with LODR being an official fork with hotswapping support, making for an even faster development cycle. No need to restart LOVR, LODR detects that the project files changed and restart automatically. 
+These two versions are basically the same, with LODR being an official fork with hot swapping support, making for an even faster development cycle. No need to restart LOVR, LODR detects that the project files changed and restart automatically. 
 
-Or you can just add the restart to your adb command
+Or you can just add the restart to your ADB command
 
 
 ## Math
 Quaterniions are used for rotation systems in LOVR.
 
 They represent rotations, so they have also an axis of rotation 
-you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversly that direction in the coordinate system define by the quaternion.
+you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversely that direction in the coordinate system define by the quaternion.
 
-mat4 for rototranslations are "column-major 4x4 homogeneous transformation matrices"
+Mat4 for rototranslations are "column-major 4x4 homogeneous transformation matrices"
 
 ## Graphics
-rendering tetures on 2d objects needs shaders, which is shit
-BUT we can use canvases to generate the textures, apply the caonvas to a Material and then we don0t need them!
-better
+rendering textures on 2d objects needs shaders, which is shit
+BUT we can use canvases to generate the textures, apply the canvas to a Material, and then we don't need them!
+Better
 
 printing single color blobs didn0t work, maybe writing them to disk will be better
 this can be done with
@@ -135,20 +137,21 @@ and then
 ```
 `local points = lovr.headset.getBoundsGeometry()` returns an ungodly number of points
 
-the standard shader admits only onem light source
+the standard shader admits only one light source
 
 ## Shaders
-Shaders are a complex topic, fundamental for 3D rendering, and can also be used for parallel high performance comuptations
 
-THe system uses a `shader = lovr.graphics.newShader([[]],[[]])` function that reads raw GLSL and compiles a shader
+Shaders are a complex topic, fundamental for 3D rendering, and can also be used for parallel high performance computations
+
+The system uses a `shader = lovr.graphics.newShader([[]],[[]])` function that reads raw GLSL and compiles a shader
 this can then be loaded by `lovr.graphics.setShader(shader)`
-These shader will dictate the properties and color fo pixels rendered
+These shaders will dictate the properties and color of pixels rendered
 
 all shaders can access `uniform <type> <name>` values, given by LOVR with `shader:send(<name>, <value>)`
 
 shaders can also use ShaderBlocks to pass back and forth more types of data, including arrays 
-the code here is more complex, so   make reference to the [New Shader Block Docs](https://lovr.org/docs/v0.15.0/lovr.graphics.newShaderBlock) and [Shader Block Docs](https://lovr.org/docs/v0.15.0/ShaderBlock)
-Acooridng to the Devs, Mat4 and Vec3 are different to other datatypes and so some need to be unpacked and some don't
+the code here is more complex, so make reference to the [New Shader Block Docs](https://lovr.org/docs/v0.15.0/lovr.graphics.newShaderBlock) and [Shader Block Docs](https://lovr.org/docs/v0.15.0/ShaderBlock)
+According to the Devs, Mat4 and Vec3 are different to other data types and so some need to be unpacked and some don't
 
 The shader can also be used on the entire eye image by more complex usage of canvases
 
@@ -165,9 +168,9 @@ the default is
     }
 ```
 
-values can be exfiltrated to the Fragment shader by declating a `out <type> <name>` variable and defining them in the shader code
+values can be exfiltrated to the Fragment shader by declaring a `out <type> <name>` variable and defining them in the shader code
 
-some of the available values are 
+some available values are 
 ```glsl 
 in vec3 lovrPosition; // The vertex position in meters, relative to the model itself
 in vec3 lovrNormal; // The vertex normal vector
@@ -200,7 +203,7 @@ pos = vec3(lovrModel * vertex); //gives 3d world position
 ```
 
 ### Fragment
-The fragment shader renders the pixel itself, getting the input from the Geometry Shader and computing from that, tetxures, diffuse and emissive texttures, and other factors the color of the pixel
+The fragment shader renders the pixel itself, getting the input from the Geometry Shader and computing from that, textures, diffuse and emissive textures, and other factors the color of the pixel
 
 this is the default fragment shader
 ```glsl
@@ -238,14 +241,14 @@ we can access shared values from the Vertex Shader with `in <type> <name>`
 So shaders that fully cover the rendering process, not passing by the normal lovr.graphics code but do the entire work themselves
 
 To achieve this we need the shader to fully cover the user UI and eyes.
-This is acheived by:
-1. define a vertex shader with `return vertex` so that n geometry transofmration is applied
+This is achieved by:
+1. define a vertex shader with `return vertex` so that geometry transformation is applied
 2. render the scene in the fragment shader, passing info from the vertex if needed
 3. in lovr, activate the shader 
 4. run `lovr.graphics.fill()` 
 5. remove the shader
 
-We probably also want the exact diection and position of the pixels we'll be filling in, for that:
+We probably also want the exact direction and position of the pixels we'll be filling in, for that:
 ``` glsl
 out vec3 pos;
 out vec3 dir;
@@ -256,8 +259,8 @@ vec4 position(mat4 projection, mat4 transform, vec4 vertex) {
   return vertex;
 }
 ```
-passes both values to the fragment shader from the vertex one.
-[code source](https://ifyouwannabemylovr.slack.com/archives/C59QZ4V6Y/p1659160201503029)
+Passes both values to the fragment shader from the vertex one.
+[Code source](https://ifyouwannabemylovr.slack.com/archives/C59QZ4V6Y/p1659160201503029)
 
 This allows us to do custom rendering techniques like 
 
@@ -271,16 +274,16 @@ Useful for some effects seen in some videos like
 
 These include 3D fractals and some other cool stuff
 
-The merger sponge was very inefficent due to inefficencies and not using the recursive space.
-This means that more efficent fractals are perfectly possible, we just need to use a better method
+The merger sponge was very inefficient due to inefficiencies and not using the recursive space.
+This means that more efficient fractals are perfectly possible, we just need to use a better method
 
-Wathcnig the code generated by PySpace, the idea is great, you can generate the needed glsl code on the fly with python, but the results are not fast enough on my laptop and i think the same will happen on the Headset, the code has options to be rendered not in live to make videos, so that's probably how he made the videos. Or maybe using a powerful GPU it could be done?
+Watching the code generated by PySpace, the idea is great, you can generate the needed GLSL code on the fly with Python, but the results are not fast enough on my laptop and I think the same will happen on the Headset, the code has options to be rendered not in live to make videos, so that's probably how he made the videos. Or maybe using a powerful GPU it could be done?
 
 Union: min(a, b)
 Intersect: max(a, b)
-DIfference: max(a, -b)
+Difference: max(a, -b)
 
-some codes for simple geometres can be found at 
+some codes for simple geometries can be found at 
  - https://www.shadertoy.com/view/wdf3zl
  - http://blog.hvidtfeldts.net/index.php/2011/08/distance-estimated-3d-fractals-iii-folding-space/
  - https://iquilezles.org/articles/
@@ -288,7 +291,7 @@ some codes for simple geometres can be found at
 ## Network
 ### LuaJIT-requests
 
-The [Libary](https://github.com/LPGhatguy/luajit-request) rlises upon libcurl, which needs to be compiled and added to the plugin folder of the APK file before installing, in `lib/arm64-v8a`
+The [Library](https://github.com/LPGhatguy/luajit-request) relies upon libcurl, which needs to be compiled and added to the plugin folder of the APK file before installing, in `lib/arm64-v8a`
 
 ```lua
     request = require("luajit-request")
@@ -296,7 +299,7 @@ The [Libary](https://github.com/LPGhatguy/luajit-request) rlises upon libcurl, w
 
 it supports GET and POST, file streams, custom headers and more
 
-Documentation is sacrce and the est way is just reading the `init.lua` file to understand how to pass arguments.
+Documentation is scarce, and the best way is just reading the `init.lua` file to understand how to pass arguments.
 
 You might also want to look up [HTTP specifications](https://developer.mozilla.org/en-US/docs/Web/HTTP) to correctly build the header 
 
@@ -312,12 +315,12 @@ Lua is not batteries included, so we need a JSON parsing library.
 
 The fastest is [Lua-cJSON](https://github.com/bjornbytes/lua-cjson) which is a compiled plugin based on a C library, faster but also needs to be added to the APK.
 
-For pure Lua we have [luanjson](https://github.com/grafi-tt/lunajson) and [json.lua](https://github.com/rxi/json.lua), both valid and quite efficent, with no need to compile or inject libraries, and fast enough for simple website API access
+For pure Lua we have [lunajson](https://github.com/grafi-tt/lunajson) and [json.lua](https://github.com/rxi/json.lua), both valid and quite efficient, with no need to compile or inject libraries, and fast enough for simple website API access
 
 
 ## OOP
 
-Lua by itsef has no OOP methids. Classes and Objects are not available. Some classes can implement this, but these can be easily built as needed by using Tables and Metatables
+Lua by itself has no OOP methods. Classes and Objects are not available. Some classes can implement this, but these can be easily built as needed by using Tables and Metatables
 
 
 https://docs.otland.net/lua-guide/concepts/metatables
@@ -336,15 +339,15 @@ function obj.method(self)
     -- do stuff
 end
 ```
-and you have a valid object. 
+And you have a valid object. 
 
 ### Classes
-Here we need the metatables. These are advanced tables that can define more complex properties such as interation through operatores like `+` or `==`, but also thngs like length, calling the table like a function, what to do when a certain value is called and what to do whena  new value is defined.
+Here we need the metatables. These are advanced tables that can define more complex properties such as integration through operators like `+` or `==`, but also things like length, calling the table like a function, what to do when a certain value is called and what to do when a new value is defined.
 
 The core question is defining standard keys and values for standard functions, those of the class, so each instance can call the same functions but with their values.
-This function is covered by the `__index` metatable, which defines where else to go to check for unkown indeces
+This function is covered by the `__index` metatable, which defines where else to go to check for unknown indices
 
-This is acheived by defining the functions for the class on an empty or minimal table, then at initialization of the instance, we initiaize a new table with the needed values, asssociate the insatne wth the class via the `__index` metatable and returning the insatnce. 
+This is achieved by defining the functions for the class on an empty or minimal table, then at initialization of the instance, we initialize a new table with the needed values, associate the instance with the class via the `__index` metatable and returning the instance. 
 Each instance will access the methods of the class unless overridden and any usage of `self` will be in reference to the instance, not the class
 
 ```lua
@@ -359,3 +362,21 @@ function Class.new(self, val1, val_2) --define generting method
     return instance -- return the instance, not the class
 end
 ```
+
+## Tasks
+
+ADB commands obviously are key to any decently useful task
+
+Pipes can be extremely useful to move data between commands and functions
+
+`wait` can be used to wait for the previous command to finish
+
+`sleep n` waits n seconds before moving to the next command
+
+A very useful command to use in tasks is `play`. It can play audio files, but can also synthesize soundwaves from scratch
+```bash
+    play -q -n -c2 synth sin %-12 sin %-9 sin %-5 sin %-2 fade q 0.1 1 0.3
+```
+Gives a very nice Organ-like sound
+
+
