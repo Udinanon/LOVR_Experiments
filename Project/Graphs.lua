@@ -13,15 +13,13 @@ function Graphs:new(size, scale, resolution, graph_type, hand)
     local graph_type = graph_type or "center"
     local hand = hand or "left"
     local resolution = resolution or 1000
-    local scale = scale or 10
+    local scale = scale or 2
     local size = size or 1
     local position = lovr.math.newVec3(lovr.headset.getPosition(hand))
     local orientation = lovr.math.newQuat(lovr.headset.getOrientation(hand))
-    local image = lovr.data.newImage(resolution, resolution, "rgb", nil) -- empty image
-    local texture = lovr.graphics.newTexture(image, { format = "rgb", mipmaps = true })
-    local material = lovr.graphics.newMaterial()
-    texture:setFilter("trilinear")
-    material:setTexture(texture)
+    local image = lovr.data.newImage(resolution, resolution, "rgba8") -- empty image
+    local texture = lovr.graphics.newTexture(image, { mipmaps = false, usage={"sample", "transfer"}})
+    local material = lovr.graphics.newMaterial({texture = texture})
     local instance = {
         position = position,
         orientation = orientation,
@@ -82,7 +80,7 @@ function Graphs:drawAxes()
     if self.graph_type == "center" then
         for i=0, self.resolution-1 do
             self:drawPixel({ (self.resolution / 2) - 1, i }, {180, 1, 100, 1})
-            self:drawPixel({ i, (self.resolution / 2) - 1}, { 160, 1, 100, 1 })
+            self:drawPixel({ i, (self.resolution / 2) - 1}, { 180, 1, 100, 1 })
         end
     elseif self.graph_type == "positive" then
         for i = 0, self.resolution - 1 do
@@ -92,14 +90,22 @@ function Graphs:drawAxes()
     end
 end
 
----Draw the board in VR
-function Graphs:draw()
+---Update the board textures
+function Graphs:update_textures(transfer_pass)
     if not self.visible then
         return
     end
-    self.texture:replacePixels(self.image)
-    lovr.graphics.plane(self.material, self.position, self.size, self.size, self.orientation)
-    
+    transfer_pass:copy(self.image, self.texture)
+end
+
+
+---Draw the board in VR
+function Graphs:draw(pass)
+    if not self.visible then
+        return
+    end
+    pass:setMaterial(self.material)
+    pass:plane(self.position, self.size, self.size, self.orientation)    
 end
 
 ---Move board position and orientation to hand
@@ -128,9 +134,7 @@ end
 
 ---Reset graph to blank image
 function Graphs:clean()
-    self.image = lovr.data.newImage(self.resolution, self.resolution, "rgb", nil) -- empty image
-    self.texture:replacePixels(self.image)
-    --self.material:setTexture(texture)
+    self.image = lovr.data.newImage(self.resolution, self.resolution) -- empty image
 end
 
 ---Destroy graph
@@ -142,11 +146,20 @@ end
 -- Class functions
 
 ---Call Graph:draw() on all Graphs
-function Graphs:drawAll()
-    for _, graph in ipairs(Graphs.all_graphs) do
-        graph:draw()
-    end
+function Graphs:drawAll(pass)
+    local transfer_pass = lovr.graphics.getPass("transfer")
     
+    for _, graph in ipairs(Graphs.all_graphs) do
+        graph:update_textures(transfer_pass)
+    end
+
+    --lovr.graphics.submit(transfer_pass)
+    pass:setColor(1, 1, 1, 1)
+    for _, graph in ipairs(Graphs.all_graphs) do
+        graph:draw(pass)
+    end
+    pass:setMaterial()
+    return transfer_pass
 end
 
 return Graphs

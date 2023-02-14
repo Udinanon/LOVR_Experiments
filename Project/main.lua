@@ -130,13 +130,11 @@ function lovr.update(dt)
 end
 
 -- this draws obv
-function lovr.draw()
+function lovr.draw(pass)
 
-  Utils.drawVectors()
-  Utils.drawLabels()
+  Utils.drawVectors(pass)
+  Utils.drawLabels(pass)
 
-  -- draw blackboard
-  Graphs:drawAll()
   
   -- draw sun and bodies
   SolarSystem:drawSun()
@@ -144,17 +142,22 @@ function lovr.draw()
 
   -- draw hands
   if State:isNormal() then
-    Utils.drawHands(0xffffff)
+    Utils.drawHands(pass, 0xffffff)
   end
   if State["A"] then
-    Utils.drawHands(0x0000ff)
+    Utils.drawHands(pass, 0x0000ff)
   end
   if State["B"] then
-    Utils.drawHands(0x00ff00)
+    Utils.drawHands(pass, 0x00ff00)
   end
 
-  Utils.drawBoxes()
-  Utils.drawVolumes()
-  Utils.drawAxes()
-  Utils.drawBounds()
+  -- draw blackboard
+  local transfer_pass = nil
+  transfer_pass = Graphs:drawAll(pass)
+
+  Utils.drawBoxes(pass)
+  Utils.drawVolumes(pass)
+  Utils.drawAxes(pass)
+  Utils.drawBounds(pass)
+  lovr.graphics.submit({ pass, transfer_pass })
 end
