@@ -76,7 +76,7 @@
             }
         },
         {
-            "label": "Open LODR",
+            "label": "Open LODR v0.15",
             "type": "shell",
             "command": "adb shell monkey -p org.lovr.hotswap 1",
             "problemMatcher": [],
@@ -87,7 +87,7 @@
             }
         },
         {
-            "label": "Open LOVR",
+            "label": "Open LOVR v0.16",
             "type": "shell",
             "command": "adb shell monkey -p org.lovr.app 1",
             "problemMatcher": [],
@@ -98,7 +98,7 @@
             }
         },
         {
-            "label": "LODR Send Project",
+            "label": "LODR v0.15 Send Project",
             "type": "shell",
             "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.hotswap/files/.lodr;",
             "problemMatcher": [],
@@ -108,7 +108,7 @@
             }
         },
         {
-            "label": "LODR Debug Project",
+            "label": "LODR v0.15 Debug Project",
             "type": "shell",
             "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.hotswap/files/.lodr; wait; adb logcat -s LOVR",
             "problemMatcher": [],
@@ -123,21 +123,27 @@
             }
         },
         {
-            "label": "LOVR Send Project",
+            "label": "LOVR v0.16 Send Project",
             "type": "shell",
             "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.app/files;adb shell am force-stop org.lovr.app; adb shell am start org.lovr.app/org.lovr.app.Activity;",
             "problemMatcher": [],
         },
         {
-            "label": "LOVR Debug Project",
+            "label": "LOVR v0.16 Debug Project",
             "type": "shell",
             "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.app/files;adb shell am force-stop org.lovr.app; adb shell am start org.lovr.app/org.lovr.app.Activity; adb logcat -s LOVR;",
             "problemMatcher": [],
         },
         {
-            "label": "Local LOVR Send Project",
+            "label": "Local LOVR v0.15 Send Project",
             "type": "shell",
-            "command": "${workspaceFolder}/Engine/lovr-x86_64.AppImage ${workspaceFolder}/Project/",
+            "command": "${workspaceFolder}/Engine/lovr-v0.15.0-x86_64.AppImage ${workspaceFolder}/Project/",
+            "problemMatcher": [],
+        },
+        {
+            "label": "Local LOVR v0.16 Send Project",
+            "type": "shell",
+            "command": "${workspaceFolder}/Engine/lovr-v0.16.0-x86_64.AppImage ${workspaceFolder}/Project/",
             "problemMatcher": [],
         },
     ]

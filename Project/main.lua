@@ -2,7 +2,7 @@
 
 Utils = require "Utils"
 Graphs = require "Graphs"
-require "Shaders/multi_light/multi_light"
+require "Shaders/first"
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   print("LODR LOAD")
@@ -21,27 +21,54 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
-  lovr.graphics.setShader(shader)
+  Graph = Graphs:new()
+  Graph:setVisible()
+  Graph:drawAxes()
+
+  BlackBoard = Graphs:new(1, 4)
+  BlackBoard:setVisible()
+  BlackBoard:drawAxes()
+  BlackBoard:setPose(mat4(vec3(0, 1.5, 1), quat(0, 0, 0, 1)))
+
 end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
   --shader:send('viewPos', {lovr.headset.getPosition("head")})
   --shader:send("time", lovr.timer.getTime())
-  -- update physics, like magic
+  -- update physics
   world:update(dt)
 
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
- 
 
     end 
       
       -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
+      Graph:reposition()
+
     end
   end
- 
+
+
+  -- update blackboard
+  local time = lovr.timer.getTime()
+  for i, hand in ipairs(lovr.headset.getHands()) do
+    local position = lovr.math.vec3(lovr.headset.getPosition(hand))
+    Graph:drawPoint({position.x, position.z}, {10, 1, 1, 1})
+  end
+
+  
+
+
+  -- when both grips are pressed, kinda finnicky but ok
+  if lovr.headset.wasPressed("left", 'grip') and lovr.headset.wasPressed("right", 'grip') then
+    -- clear all
+      Graph:clean()
+      BlackBoard:clean()
+  end
+
   if lovr.headset.wasPressed("right", "a") then
     State["A"] = not State["A"]
   end
@@ -56,28 +83,29 @@ function lovr.update(dt)
     end
   end
 
-  local start_point = lovr.math.newVec3(1, 1, 1)
-  local x_axis = lovr.math.newVec3(1, 0, 0)
-  Utils.addVector(start_point, x_axis, { 0, 1, 1, 1 })
-  local quaternion = lovr.math.newQuat()
-  Utils.addVector(start_point, quaternion:direction(), { .5, .1, 1, 1 })
 
 end
 
 -- this draws obv
-function lovr.draw()
+function lovr.draw(pass)
+  pass:setShader(shader)
   
   -- draw hands
   if State:isNormal() then
-    Utils.drawHands(0xffffff)
+    Utils.drawHands(pass, 0xffffff)
   end
   if State["A"] then
-    Utils.drawHands(0x0000ff)
+    Utils.drawHands(pass, 0x0000ff)
   end
   if State["B"] then
-    Utils.drawHands(0x00ff00)
+    Utils.drawHands(pass, 0x00ff00)
   end
 
-  Utils.drawAxes()
-  Utils.drawBounds()
+  -- draw blackboard
+  local transfer_pass = nil
+  transfer_pass = Graphs:drawAll(pass)
+
+  Utils.drawAxes(pass)
+  Utils.drawBounds(pass)
+  lovr.graphics.submit({ pass, transfer_pass })
 end
