@@ -1,5 +1,5 @@
 out vec3 pos;
-vec4 position(mat4 projection, mat4 transform, vec4 vertex) {
-    pos = lovrPosition.xyz;
-    return projection * transform * vertex;
+vec4 lovrmain() {
+    pos = VertexNormal.xyz;
+    return Projection * View * Transform * VertexPosition;
 }
