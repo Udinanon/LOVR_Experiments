@@ -14,17 +14,23 @@ function Graphs:new(size, scale, resolution, graph_type, hand)
     local hand = hand or "left"
     local resolution = resolution or 1000
     local scale = scale or 2
-    local size = size or 1
+    
     local position = lovr.math.newVec3(lovr.headset.getPosition(hand))
     local orientation = lovr.math.newQuat(lovr.headset.getOrientation(hand))
+    local size = size or 1
+    local transform = lovr.math.newMat4(position, vec3(size), orientation)
+
     local image = lovr.data.newImage(resolution, resolution, "rgba8") -- empty image
+    for x = 1, resolution-1 do
+        for y = 1, resolution-1 do
+            image:setPixel(x, y, 0, 0, 0, 1)
+        end
+    end
     local texture = lovr.graphics.newTexture(image, { mipmaps = false, usage={"sample", "transfer"}})
     local material = lovr.graphics.newMaterial({texture = texture})
     local instance = {
-        position = position,
-        orientation = orientation,
-        size = size, -- meters in size
-        scale = scale, -- how big the graph is internally
+        transform = transform,
+        scale = scale, -- internal scale in meters
         resolution = resolution,
         image = image,
         graph_type = graph_type, -- zero center or BL corner
@@ -105,21 +111,22 @@ function Graphs:draw(pass)
         return
     end
     pass:setMaterial(self.material)
-    pass:plane(self.position, self.size, self.size, self.orientation)    
+    pass:plane(self.transform)    
 end
 
----Move board position and orientation to hand
+---Move board position and orientation to hand, rotated to have plane facing userù
 function Graphs:reposition()
-    self.position:set(lovr.headset.getPosition(self.hand))
-    self.orientation:set(lovr.headset.getOrientation(self.hand))
+    local transform = lovr.math.mat4()
+    transform:translate(vec3(lovr.headset.getPosition(self.hand)))
+    transform:rotate(quat(lovr.headset.getOrientation(self.hand)))
+    transform:rotate(math.pi / 2, 1, 0, 0)
+    self:setPose(transform)
 end
 
 ---Set position and orientation
----@param position table 3 value table vec3 for position
----@param orientation table 4 value table quat for orientation
-function Graphs:setPose(position, orientation)
-    self.position:set(unpack(position))
-    self.orientation:set(unpack(orientation))
+---@param transform mat4 transofmr
+function Graphs:setPose(transform)
+    self.transform:set(transform)
 end
 
 ---Toggle board.visible

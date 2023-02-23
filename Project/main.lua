@@ -30,7 +30,7 @@ function lovr.load()
 --  BlackBoard:drawPoint({1, 1}, {1, 1, 1, 1})
   BlackBoard:setVisible()
   BlackBoard:drawAxes()
-  BlackBoard:setPose({ 0, 1.5, 1 }, { 0, 0, -1, 0 })
+  BlackBoard:setPose(mat4(vec3(0, 1.5, 1), quat(0, 0, 0, 1)))
 
 end
 
@@ -49,7 +49,7 @@ function lovr.update(dt)
       
       -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
-      print("HERE")
+      print("Left Click")
       
       Graph:reposition()
     end
@@ -118,10 +118,15 @@ function lovr.draw(pass)
   Utils.addVector(start_point, tmp, {.5, .3, .8, 1})
   Utils.addLabel("double_quat", start_point + tmp)
 
+  local vec1 = vec3(1, 1, 1):normalize()
+  local transform = mat4(vec3(0, 0, 0), vec3(1, 1, 1), quat(0, 0, 1, 0))
+  local rott = quat(vec1)
 
+  transform:rotate(rott)
+  pass:plane(transform)
 
   Utils.drawVectors(pass)
-  Utils.drawLabels(pass)
+  --Utils.drawLabels(pass)
 
   
   -- draw hands

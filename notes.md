@@ -114,12 +114,41 @@ Or you can just add the restart to your ADB command
 
 
 ## Math
-Quaterniions are used for rotation systems in LOVR.
+Quaternions are used for rotation systems in LOVR.
 
 They represent rotations, so they have also an axis of rotation 
 you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversely that direction in the coordinate system define by the quaternion.
 
 Mat4 for rototranslations are "column-major 4x4 homogeneous transformation matrices"
+
+### Mat4
+
+Since v0.16, most operations and shapes are now focused more on using Matrices.
+These can be scary at first, but are a great way to handle all geometric elaborations together instead of splitting them into different pieces and having to combine everything at the end
+
+Matrices can store position, rotation and scaling all together.
+
+These values can be set at initialization, but can also be set later.
+
+Direction is set via `:translate()`, using raw values or a `vec3`
+
+Scale is set using `:scale()`
+
+Rotation is set using `:rotate()`, but here understanding how to use quaternions can make this much more useful
+
+#### Quats and Mat4s
+
+Quaternions can be used to rotate an element around an axis, arbitrarily. These rotations can also be chained to do come complex movements and rotations.
+
+But to set the orientation of an object to a specific direction, this can become cumbersome, and even a simple approach requires a cross product and some 3D geometry
+
+but if we have an idea of what direction we want the object to face, and we're starting from the object with rotation (0, 0, 0, 0), we can just use `:rotate(quat(desired_direction_vec3))` and the object will be facing the desired direction, barring rotation around the axis
+
+This operation works only if the object has not been rotated yet, or the combined result will be hard to predict
+
+#### Mat4
+
+Mat4 should be conceptalized as not positions or rotations, but full reference frames. these can be moved, rotated and scaled, adn these operations are  appòied seuentially, every time to the next version of the reference frame, so they are not order independednt.  
 
 ## Graphics
 rendering textures on 2d objects needs shaders, which is shit

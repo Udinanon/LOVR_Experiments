@@ -32,7 +32,11 @@ function Utils.drawVectors(pass)
     local new_vectors = {}
     for _, vector in ipairs(Utils.vectors) do
         pass:setColor(unpack(vector.color))
-        --pass:cylinder(vector.end_point, .04, vector.direction, 0, .02, false)
+        local cone_transform = mat4()
+        cone_transform:translate(vector.end_point)
+        cone_transform:rotate(vector.direction)
+        cone_transform:scale(0.05, 0.05, 0.1)
+        pass:cone(cone_transform)
         pass:line(vector.origin, vector.end_point)
         pass:setColor(1, 1, 1)
         if vector.keep_alive then
@@ -148,11 +152,11 @@ function Utils.drawHands(pass, color)
         z_axis = hand_quat:mul(z_axis)
 
         pass:setColor(1, 0, 0)
-        pass:line(position, position + z_axis * .05)
-        pass:setColor(0, 1, 0)
         pass:line(position, position + x_axis * .05)
-        pass:setColor(0, 0, 1)
+        pass:setColor(0, 1, 0)
         pass:line(position, position + y_axis * .05)
+        pass:setColor(0, 0, 1)
+        pass:line(position, position + z_axis * .05)
 
     end
 end
