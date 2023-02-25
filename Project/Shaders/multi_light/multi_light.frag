@@ -1,22 +1,23 @@
-uniform vec4 ambience;  
-uniform vec4 lightColor;
+// Buffers allow for large masses of data to be moved
+layout(set = 2, binding = 0) uniform Positions {
+  vec4 lights[5];
+};
+//Constants are faster and cheaper to move but are seriously memory limited
+Constants {
+  vec3 ambience;  
+  vec3 lightColor;
+  int n_lights;
+};
 
-in vec3 Normal;
-in vec3 FragmentPos;
-
-vec4 color(vec4 graphicsColor, sampler2D image, vec2 uv) 
-{    
+vec4 lovrmain(){    
     //diffuse
     vec3 norm = normalize(Normal);
-    vec4 diffuse = vec4(0.0);
-    for( int i = 0; i < lightPos.length(); i++){
-        if (lightPos[i][0] > 0.){
-        vec3 pos = lightPos[i].yzw;  
-        vec3 lightDir = normalize(pos - FragmentPos); // unit vector of vertex-light  
-        float diff = max(dot(norm, lightDir), 0.0); // represent how exposes the fragment is
-        diffuse += diff * lightColor; //apply to color
-        }
+    vec3 diffuse = vec3(0.0);
+    for( int i = 0; i < 5; i++){
+      vec3 pos = lights[i].xyz;  
+      vec3 lightDir = normalize(pos - PositionWorld); // unit vector of vertex-light  
+      float diff = max(dot(norm, lightDir), 0.0); // represent how exposes the fragment is
+      diffuse += diff * lightColor/n_lights; //apply to color
     }
-    vec4 baseColor = graphicsColor * texture(image, uv); // get potential texture            
-    return baseColor * (ambience + diffuse); //apply ligth and ambiance
+    return vec4(diffuse, 1.); //apply ligth and ambiance
 }
