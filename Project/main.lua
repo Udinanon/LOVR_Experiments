@@ -12,14 +12,16 @@ function lovr.load()
   world = lovr.physics.newWorld()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
+  world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal()
-    -- check uf no state is normal
+    -- check uf no state is normals
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
+
 
   Graph = Graphs:new()
   Graph:setVisible()
@@ -41,7 +43,6 @@ function lovr.update(dt)
 
   if State:isNormal() then
     if lovr.headset.wasPressed("right", 'trigger') then
-
     end 
       
       -- if left trigger is pressed
@@ -53,7 +54,6 @@ function lovr.update(dt)
 
 
   -- update blackboard
-  local time = lovr.timer.getTime()
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = lovr.math.vec3(lovr.headset.getPosition(hand))
     Graph:drawPoint({position.x, position.z}, {10, 1, 1, 1})
@@ -67,6 +67,7 @@ function lovr.update(dt)
     -- clear all
       Graph:clean()
       BlackBoard:clean()
+      Utils.boxes = {}
   end
 
   if lovr.headset.wasPressed("right", "a") then
@@ -100,10 +101,12 @@ function lovr.draw(pass)
   if State["B"] then
     Utils.drawHands(pass, 0x00ff00)
   end
-
   -- draw blackboard
-  local transfer_pass = nil
-  transfer_pass = Graphs:drawAll(pass)
+  local transfer_pass = lovr.graphics.getPass("transfer")
+  Graphs:drawAll(pass, transfer_pass)
+  Utils.drawBounds(pass)
+  Utils.drawAxes(pass)
+  
 
   Utils.drawAxes(pass)
   Utils.drawBounds(pass)

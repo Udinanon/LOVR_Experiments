@@ -153,8 +153,8 @@ end
 -- Class functions
 
 ---Call Graph:draw() on all Graphs
-function Graphs:drawAll(pass)
-    local transfer_pass = lovr.graphics.getPass("transfer")
+function Graphs:drawAll(pass, transfer_pass)
+    
     
     for _, graph in ipairs(Graphs.all_graphs) do
         graph:update_textures(transfer_pass)
@@ -166,7 +166,6 @@ function Graphs:drawAll(pass)
         graph:draw(pass)
     end
     pass:setMaterial()
-    return transfer_pass
 end
 
 return Graphs
