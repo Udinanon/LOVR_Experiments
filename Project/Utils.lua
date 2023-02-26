@@ -269,12 +269,25 @@ function Utils.drawBounds(pass)
     pass:box(mat4(vec3(0, 2, -height / 2), vec3(width, 4, 0.1)), 'line')
 end
 
+---Add .1 m size physics cube at position, random color
+---@param position lovr.Vec3
+function Utils.addBox(position)
+    local box = {}
+    box.body = world:newBoxCollider(position, 0.1)
+    box.color = lovr.math.newVec3(math.random(), math.random(), math.random())
+    table.insert(Utils.boxes, box)
+end
+
+---Draw stored physics cubes
+---@param pass lovr.Pass
 function Utils.drawBoxes(pass)
     -- draw the boxes
     for i, box in ipairs(Utils.boxes) do
-        local x, y, z = box:getPosition()
-        pass:setColor(0.8, 0.8, 0.8)
-        pass:cube(x, y, z, .1, box:getOrientation(), 'fill')
+        local color = box.color or vec3(0.4, 0.5, 0.6)
+        pass:setColor(color:unpack())
+
+        local transform = mat4(vec3(box.body:getPosition()), vec3(.1, .1, .1), quat(box.body:getOrientation()))
+        pass:cube(transform, 'fill')
     end    
 end
 
