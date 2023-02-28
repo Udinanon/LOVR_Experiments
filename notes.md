@@ -148,7 +148,7 @@ This operation works only if the object has not been rotated yet, or the combine
 
 #### Mat4
 
-Mat4 should be conceptalized as not positions or rotations, but full reference frames. these can be moved, rotated and scaled, adn these operations are  appòied seuentially, every time to the next version of the reference frame, so they are not order independednt.  
+Mat4 should be conceptualized as not positions or rotations, but full reference frames. These can be moved, rotated and scaled, and these operations are applied sequentially, every time to the next version of the reference frame, so they are not order independent.  
 
 ## Graphics
 rendering textures on 2d objects needs shaders, which is shit
@@ -419,9 +419,9 @@ Materials are now generated with a table of values, which are passed to the shad
 
 texture filtering is no longer set via `:setFilter()`, it seems to be declared at creation only
 
-textures are associated with materials at creation, idk if we can still update them the same way
+Textures are associated with materials at creation, and updates are more complex. They can still be updated but a transfer pass to mode data from the CPU to the GPU is now needed.
 
-`lovr.graphics` seems to have been downsized heavilty, now using render passes, generated via `lovr.draw(pass)`
+`lovr.graphics` seems to have been downsized heavily, now using render passes, generated via `lovr.draw(pass)`
 
 cylinders and cones have different geometric descriptions, and it's unclear
 
@@ -432,3 +432,17 @@ some draw commands have been remixed, values moved around
 Operations that move data between CPU and GPU are now more complex, such as copying images into textures. These now require using a transfer pass, which has to be created and held until the end of the frame and submitted wit the draw pass. Submitting a pass ends the frame and any subsequent pass operations crashes LOVR.
 
 Materials are set at the pass, not at draw
+
+### Shaders
+these have been reworked quite a lot
+the now have their function endpoint at `lovrmain`, for both vertex and fragment
+functions no longer require input args
+the uniforms are much different, better documented, although some older entries seem to be missing
+we'll have to get some basic understanding of 3D camera geometry
+
+Buffers and Constants are now the main passageways between CPU and Shaders, with better documentation
+
+There are some bugs regarding buffers, specifically using Vec3 causes weird errors if you don't use layout = 140, or just use Vec4
+
+
+
