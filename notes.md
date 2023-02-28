@@ -418,9 +418,9 @@ Materials are now generated with a table of values, which are passed to the shad
 
 texture filtering is no longer set via `:setFilter()`, it seems to be declared at creation only
 
-textures are associated with materials at creation, idk if we can still update them the same way
+Textures are associated with materials at creation, and updates are more complex. They can still be updated but a transfer pass to mode data from the CPU to the GPU is now needed.
 
-`lovr.graphics` seems to have been downsized heavilty, now using render passes, generated via `lovr.draw(pass)`
+`lovr.graphics` seems to have been downsized heavily, now using render passes, generated via `lovr.draw(pass)`
 
 cylinders and cones have different geometric descriptions, and it's unclear
 
@@ -432,10 +432,16 @@ Operations that move data between CPU and GPU are now more complex, such as copy
 
 Materials are set at the pass, not at draw
 
-### SHaders
-these have been reqorked quite a lot
+### Shaders
+these have been reworked quite a lot
 the now have their function endpoint at `lovrmain`, for both vertex and fragment
-fucntions no longe require input args
-the uniforms are much different, better documented although some older entries seem to be missing
+functions no longer require input args
+the uniforms are much different, better documented, although some older entries seem to be missing
 we'll have to get some basic understanding of 3D camera geometry
+
+Buffers and Constants are now the main passageways between CPU and Shaders, with better documentation
+
+There are some bugs regarding buffers, specifically using Vec3 causes weird errors if you don't use layout = 140, or just use Vec4
+
+
 
