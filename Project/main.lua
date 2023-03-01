@@ -22,14 +22,26 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
+  local cassini = lovr.filesystem.read("cassini_pos.txt")
+  --"([^\n]*)\n?"
+  cassini_pos = {}
+  local offset = mat4(vec3(0, 1, 0), vec3(2, 2, 2), quat())
+  for line in Utils.gsplit(cassini, "\n") do
+    local pos = lovr.math.newVec3(unpack(Utils.map(Utils.split(line, " ", true), tonumber)))
+    pos = offset:mul(pos)
+    table.insert(cassini_pos, pos)
+  end
+  print(cassini_pos[1])
+  print(cassini_pos[4000])
+  print(#cassini_pos)
 
   Graph = Graphs:new()
-  Graph:setVisible()
+  --Graph:setVisible()
   Graph:drawAxes()
 
   BlackBoard = Graphs:new(1, 4)
 --  BlackBoard:drawPoint({1, 1}, {1, 1, 1, 1})
-  BlackBoard:setVisible()
+  --BlackBoard:setVisible()
   BlackBoard:drawAxes()
   BlackBoard:setPose(mat4(vec3(0, 1.5, 1), quat(0, 0, 0, 1)))
 
@@ -94,6 +106,12 @@ end
 
 -- this draws obv
 function lovr.draw(pass)
+  --pass:setColor(0xFFFFFF)
+  -- odd flickering, ask on slack
+  pass:line(cassini_pos)
+  print(cassini_pos[1])
+  print(cassini_pos[4000])
+  
 
 
   Utils.drawVectors(pass)

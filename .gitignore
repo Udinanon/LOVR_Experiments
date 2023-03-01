@@ -16,7 +16,7 @@ projects.md
 /APK*/
 ltex*
 /Compiling/
-/VROrbits/
+/VROrbits/vrorbits_env/
 # Compiled Lua sources
 luac.out
 
