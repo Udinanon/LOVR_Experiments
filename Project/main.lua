@@ -22,9 +22,23 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
+  motion = {
+    pose = lovr.math.newMat4(), -- Transformation in VR initialized to origin (0,0,0) looking down -Z
+    thumbstickDeadzone = 0.3, -- Smaller thumbstick displacements are ignored (too much noise)
+    dashDistance = 1.5,
+    thumbstickCooldownTime = 0.3,
+    thumbstickCooldown = 0,
+    -- Smooth motion parameters
+    turningSpeed = 2 * math.pi * 1 / 6,
+    walkingSpeed = 2,
+  }
+  
   local cassini = lovr.filesystem.read("cassini_pos.txt")
   --"([^\n]*)\n?"
+
+
   cassini_pos = {}
+  cassini_index = 0
   local offset = mat4(vec3(0, 1, 0), vec3(2, 2, 2), quat())
   for line in Utils.gsplit(cassini, "\n") do
     local pos = lovr.math.newVec3(unpack(Utils.map(Utils.split(line, " ", true), tonumber)))
@@ -53,6 +67,32 @@ function lovr.update(dt)
   world:update(dt)
 
   if State:isNormal() then
+
+    if lovr.headset.isTracked('left') then
+      local x, y = lovr.headset.getAxis('left', 'thumbstick')
+      local head_quat = quat(lovr.headset.getOrientation("head"))
+
+      -- Smooth strafe movement
+      if math.abs(x) > motion.thumbstickDeadzone then
+        local strafeVector = head_quat:mul(vec3(1, 0, 0))
+        motion.pose:translate(strafeVector * x * motion.walkingSpeed * dt)
+      end
+      -- Smooth Forward/backward movement
+      if math.abs(y) > motion.thumbstickDeadzone then
+        motion.pose:translate(head_quat:direction() * y * motion.walkingSpeed * dt)
+      end
+      -- if left trigger is pressed
+      if lovr.headset.isDown("left", "trigger") then
+          local vertVector = head_quat:mul(vec3(0, 1, 0))
+          motion.pose:translate(vertVector * 0.5 * motion.walkingSpeed * dt)
+      end
+      -- if left trigger is pressed
+      if lovr.headset.isDown("left", "grip") then
+        local vertVector = head_quat:mul(vec3(0, 1, 0))
+        motion.pose:translate(vertVector * -0.5 * motion.walkingSpeed * dt)
+      end
+    end
+
     if lovr.headset.wasPressed("right", 'trigger') then
       local curr_color = Utils.shallowCopy(color)
       Utils.addVector(lovr.math.newVec3(lovr.headset.getPosition("right")), lovr.math.newVec3(lovr.headset.getVelocity("right")), curr_color, true)
@@ -61,12 +101,7 @@ function lovr.update(dt)
       Utils.addBox(vec3(lovr.headset.getPosition("right")))
     end 
       
-      -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "trigger") then
-      print("Left Click")
-      
-      Graph:reposition()
-    end
+   
   end
 
   -- update blackboard
@@ -106,35 +141,36 @@ end
 
 -- this draws obv
 function lovr.draw(pass)
-  --pass:setColor(0xFFFFFF)
-  -- odd flickering, ask on slack
-  pass:line(cassini_pos)
-  print(cassini_pos[1])
-  print(cassini_pos[4000])
+  Utils.drawHands(pass, 0xffffff)
   
+  pass:transform(mat4(motion.pose):invert())
+  -- odd flickeringnin v16 from tables, fixed later
+  pass:setColor(0xA66300)
+  local saturn_transform = mat4(vec3(0, 1, 0), vec3(0.05), quat())
+  pass:sphere(saturn_transform)
+
+  pass:setColor(0xFFFFFF)
+  pass:line(cassini_pos)
+
+  pass:setColor(0x6D7582)
+  cassini_index = (cassini_index % #cassini_pos) + 1
+  local sat_transform = mat4()
+  sat_transform:translate(cassini_pos[cassini_index])
+  sat_transform:scale(0.02)
+  pass:sphere(sat_transform)
+  pass:origin()
 
 
   Utils.drawVectors(pass)
   --Utils.drawLabels(pass)
 
-  
-  -- draw hands
-  if State:isNormal() then
-    Utils.drawHands(pass, 0xffffff)
-  end
-  if State["A"] then
-    Utils.drawHands(pass, 0x0000ff)
-  end
-  if State["B"] then
-    Utils.drawHands(pass, 0x00ff00)
-  end
   -- draw blackboard
-  local transfer_pass = lovr.graphics.getPass("transfer")
-  Graphs:drawAll(pass, transfer_pass)
+  --local transfer_pass = lovr.graphics.getPass("transfer")
+  --Graphs:drawAll(pass, transfer_pass)
   Utils.drawBounds(pass)
   Utils.drawAxes(pass)
   
 
   Utils.drawBoxes(pass)
-  lovr.graphics.submit({ pass, transfer_pass })
+  --lovr.graphics.submit({ pass, transfer_pass })
 end
