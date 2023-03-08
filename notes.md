@@ -114,12 +114,41 @@ Or you can just add the restart to your ADB command
 
 
 ## Math
-Quaterniions are used for rotation systems in LOVR.
+Quaternions are used for rotation systems in LOVR.
 
 They represent rotations, so they have also an axis of rotation 
 you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversely that direction in the coordinate system define by the quaternion.
 
 Mat4 for rototranslations are "column-major 4x4 homogeneous transformation matrices"
+
+### Mat4
+
+Since v0.16, most operations and shapes are now focused more on using Matrices.
+These can be scary at first, but are a great way to handle all geometric elaborations together instead of splitting them into different pieces and having to combine everything at the end
+
+Matrices can store position, rotation and scaling all together.
+
+These values can be set at initialization, but can also be set later.
+
+Direction is set via `:translate()`, using raw values or a `vec3`
+
+Scale is set using `:scale()`
+
+Rotation is set using `:rotate()`, but here understanding how to use quaternions can make this much more useful
+
+#### Quats and Mat4s
+
+Quaternions can be used to rotate an element around an axis, arbitrarily. These rotations can also be chained to do come complex movements and rotations.
+
+But to set the orientation of an object to a specific direction, this can become cumbersome, and even a simple approach requires a cross product and some 3D geometry
+
+but if we have an idea of what direction we want the object to face, and we're starting from the object with rotation (0, 0, 0, 0), we can just use `:rotate(quat(desired_direction_vec3))` and the object will be facing the desired direction, barring rotation around the axis
+
+This operation works only if the object has not been rotated yet, or the combined result will be hard to predict
+
+#### Mat4
+
+Mat4 should be conceptualized as not positions or rotations, but full reference frames. These can be moved, rotated and scaled, and these operations are applied sequentially, every time to the next version of the reference frame, so they are not order independent.  
 
 ## Graphics
 rendering textures on 2d objects needs shaders, which is shit
@@ -390,9 +419,9 @@ Materials are now generated with a table of values, which are passed to the shad
 
 texture filtering is no longer set via `:setFilter()`, it seems to be declared at creation only
 
-textures are associated with materials at creation, idk if we can still update them the same way
+Textures are associated with materials at creation, and updates are more complex. They can still be updated but a transfer pass to mode data from the CPU to the GPU is now needed.
 
-`lovr.graphics` seems to have been downsized heavilty, now using render passes, generated via `lovr.draw(pass)`
+`lovr.graphics` seems to have been downsized heavily, now using render passes, generated via `lovr.draw(pass)`
 
 cylinders and cones have different geometric descriptions, and it's unclear
 
@@ -403,3 +432,17 @@ some draw commands have been remixed, values moved around
 Operations that move data between CPU and GPU are now more complex, such as copying images into textures. These now require using a transfer pass, which has to be created and held until the end of the frame and submitted wit the draw pass. Submitting a pass ends the frame and any subsequent pass operations crashes LOVR.
 
 Materials are set at the pass, not at draw
+
+### Shaders
+these have been reworked quite a lot
+the now have their function endpoint at `lovrmain`, for both vertex and fragment
+functions no longer require input args
+the uniforms are much different, better documented, although some older entries seem to be missing
+we'll have to get some basic understanding of 3D camera geometry
+
+Buffers and Constants are now the main passageways between CPU and Shaders, with better documentation
+
+There are some bugs regarding buffers, specifically using Vec3 causes weird errors if you don't use layout = 140, or just use Vec4
+
+
+

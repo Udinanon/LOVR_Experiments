@@ -32,7 +32,11 @@ function Utils.drawVectors(pass)
     local new_vectors = {}
     for _, vector in ipairs(Utils.vectors) do
         pass:setColor(unpack(vector.color))
-        --pass:cylinder(vector.end_point, .04, vector.direction, 0, .02, false)
+        local cone_transform = mat4()
+        cone_transform:translate(vector.end_point)
+        cone_transform:rotate(vector.direction)
+        cone_transform:scale(0.05, 0.05, 0.1)
+        pass:cone(cone_transform)
         pass:line(vector.origin, vector.end_point)
         pass:setColor(1, 1, 1)
         if vector.keep_alive then
@@ -75,62 +79,6 @@ function Utils.drawLabels(pass)
     Utils.labels = new_labels
 end
 
-
--- Misc functions
-
-function Utils.clamp(x, min, max)
-    if x < min then return min end
-    if x > max then return max end
-    return x
-end
-
----Convert HSVA color to RGBS
----@param h number/table 
----@param s number
----@param v number
----@param a number
----@return number
----@return number
----@return integer
----@return any
-function Utils.HSVAToRGBA(h, s, v, a)
-    if type(h) == "table" and s == nil then
-        h, s, v, a = unpack(h)
-    end
-    local c = v * s
-    local x = c * (1 - math.abs((h / 60) % 2 - 1))
-    local m = v - c
-    h = h % 360
-    if h < 60 then
-        return c, x, 0, a
-    elseif h < 120 then
-        return x, c, 0, a
-    elseif h < 180 then
-        return 0, c, x, a
-    elseif h < 240 then
-        return 0, x, c, a
-    elseif h < 300 then
-        return x, 0, c, a
-    else
-        return c, 0, x, a
-    end
-end
-
--- useful as LUA does the Python thing of not copying stuff
-function Utils.shallowCopy(orig)
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in pairs(orig) do
-            copy[orig_key] = orig_value
-        end
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
-
 function Utils.drawHands(pass, color)
     -- draw colored spheres for the hands
     for i, hand in ipairs(lovr.headset.getHands()) do
@@ -148,11 +96,11 @@ function Utils.drawHands(pass, color)
         z_axis = hand_quat:mul(z_axis)
 
         pass:setColor(1, 0, 0)
-        pass:line(position, position + z_axis * .05)
-        pass:setColor(0, 1, 0)
         pass:line(position, position + x_axis * .05)
-        pass:setColor(0, 0, 1)
+        pass:setColor(0, 1, 0)
         pass:line(position, position + y_axis * .05)
+        pass:setColor(0, 0, 1)
+        pass:line(position, position + z_axis * .05)
 
     end
 end
@@ -265,12 +213,25 @@ function Utils.drawBounds(pass)
     pass:box(mat4(vec3(0, 2, -height / 2), vec3(width, 4, 0.1)), 'line')
 end
 
+---Add .1 m size physics cube at position, random color
+---@param position lovr.Vec3
+function Utils.addBox(position)
+    local box = {}
+    box.body = world:newBoxCollider(position, 0.1)
+    box.color = lovr.math.newVec3(math.random(), math.random(), math.random())
+    table.insert(Utils.boxes, box)
+end
+
+---Draw stored physics cubes
+---@param pass lovr.Pass
 function Utils.drawBoxes(pass)
     -- draw the boxes
     for i, box in ipairs(Utils.boxes) do
-        local x, y, z = box:getPosition()
-        pass:setColor(0.8, 0.8, 0.8)
-        pass:cube(x, y, z, .1, box:getOrientation(), 'fill')
+        local color = box.color or vec3(0.4, 0.5, 0.6)
+        pass:setColor(color:unpack())
+
+        local transform = mat4(vec3(box.body:getPosition()), vec3(.1, .1, .1), quat(box.body:getOrientation()))
+        pass:cube(transform, 'fill')
     end    
 end
 
@@ -283,6 +244,130 @@ function Utils.drawVolumes(pass)
         pass:setColor(0, 0.1, 0.12)
         pass:box(x, y, z, width, height, depth, volume:getOrientation(), 'fill')
     end
+end
+
+-- Misc functions
+
+function Utils.clamp(x, min, max)
+    if x < min then return min end
+    if x > max then return max end
+    return x
+end
+
+---Convert HSVA color to RGBS
+---@param h number/table
+---@param s number
+---@param v number
+---@param a number
+---@return number
+---@return number
+---@return integer
+---@return any
+function Utils.HSVAToRGBA(h, s, v, a)
+    if type(h) == "table" and s == nil then
+        h, s, v, a = unpack(h)
+    end
+    local c = v * s
+    local x = c * (1 - math.abs((h / 60) % 2 - 1))
+    local m = v - c
+    h = h % 360
+    if h < 60 then
+        return c, x, 0, a
+    elseif h < 120 then
+        return x, c, 0, a
+    elseif h < 180 then
+        return 0, c, x, a
+    elseif h < 240 then
+        return 0, x, c, a
+    elseif h < 300 then
+        return x, 0, c, a
+    else
+        return c, 0, x, a
+    end
+end
+
+-- useful as LUA does the Python thing of not copying stuff
+function Utils.shallowCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+
+
+---gsplit: iterate over substrings in a string separated by a pattern
+---@param text (string)    - the string to iterate over
+---@param pattern (string) - the separator pattern
+---@param plain (boolean)  - if true (or truthy), pattern is interpreted as a plain string, not a Lua pattern
+---@return function
+-- Usage:
+-- for substr in gsplit(text, pattern, plain) do
+--   doSomething(substr)
+-- end
+---https://phabricator.wikimedia.org/diffusion/ELUA/browse/master/engines/LuaCommon/lualib/mw.text.lua;1e408e20e800c32dfcd9bc0d55491adb631d191c$210
+function Utils.gsplit(text, pattern, plain)
+    local splitStart, length = 1, #text
+    return function()
+        if splitStart then
+            local sepStart, sepEnd = string.find(text, pattern, splitStart, plain)
+            local ret
+            if not sepStart then
+                ret = string.sub(text, splitStart)
+                splitStart = nil
+            elseif sepEnd < sepStart then
+                -- Empty separator!
+                ret = string.sub(text, splitStart, sepStart)
+                if sepStart < length then
+                    splitStart = sepStart + 1
+                else
+                    splitStart = nil
+                end
+            else
+                ret = sepStart > splitStart and string.sub(text, splitStart, sepStart - 1) or ''
+                splitStart = sepEnd + 1
+            end
+            return ret
+        end
+    end
+end
+
+---split: split a string into substrings separated by a pattern.
+---@param text (string)    - the string to iterate over
+---@param pattern (string) - the separator pattern
+---@param plain (boolean)  - if true (or truthy), pattern is interpreted as a plain string, not a Lua pattern
+---@return table
+function Utils.split(text, pattern, plain)
+    local ret = {}
+    for match in Utils.gsplit(text, pattern, plain) do
+        table.insert(ret, match)
+    end
+    return ret
+end
+---map: apply a function f to all elmeent of a table, shallow
+---@param table table
+---@param f function
+---@return table
+function Utils.map(table, f)
+    local t = {}
+    for k, v in pairs(table) do
+        t[k] = f(v)
+    end
+    return t
+end
+
+---return sign of number, 1/-1
+---@param x number
+---@return integer
+function Utils.sign(x)
+    return (x < 0 and -1) or 1
 end
 
 return Utils

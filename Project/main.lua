@@ -19,6 +19,7 @@ function lovr.load()
   
   SolarSystem = require "SolarSystem"
   
+  world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
@@ -28,9 +29,10 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
+
   Graph = Graphs:new()
   Graph:setVisible()
-
+  Graph:drawAxes()
 end
 
 -- runs at each dt interval, where you do input and physics
@@ -66,7 +68,7 @@ function lovr.update(dt)
       
       -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
-      print("HERE")
+      print("Left Click")
       --[[
         local sun_pos = lovr.math.newVec3(sun.collider:getPosition())
       local hand_pos = vec3(lovr.headset.getPosition("left"))
@@ -78,6 +80,7 @@ function lovr.update(dt)
       local speed_vec = distance_vec:cross(x_axis)
       local speed_mod = math.sqrt(.01 * (sun.mass + 1) / distance_vec:length()) 
       local curr_color = Utils.shallowCopy(color)
+
       
       local body = SolarSystem:new(curr_color, lovr.math.newVec3(lovr.headset.getPosition("left")),
       speed_vec:mul(speed_mod))
@@ -133,7 +136,7 @@ end
 function lovr.draw(pass)
 
   Utils.drawVectors(pass)
-  Utils.drawLabels(pass)
+  --Utils.drawLabels(pass)
 
   
   -- draw sun and bodies
@@ -150,14 +153,13 @@ function lovr.draw(pass)
   if State["B"] then
     Utils.drawHands(pass, 0x00ff00)
   end
-
   -- draw blackboard
-  local transfer_pass = nil
-  transfer_pass = Graphs:drawAll(pass)
+  local transfer_pass = lovr.graphics.getPass("transfer")
+  Graphs:drawAll(pass, transfer_pass)
+  Utils.drawBounds(pass)
+  Utils.drawAxes(pass)
+  
 
   Utils.drawBoxes(pass)
-  Utils.drawVolumes(pass)
-  Utils.drawAxes(pass)
-  Utils.drawBounds(pass)
-  lovr.graphics.submit({ pass, transfer_pass })
+  return lovr.graphics.submit({ pass, transfer_pass })
 end
