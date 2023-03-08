@@ -17,6 +17,9 @@ projects.md
 ltex*
 /Compiling/
 /VROrbits/vrorbits_env/
+cassini_pos.txt
+/VROrbits/Cassini*
+/VROrbits/*.bsp
 # Compiled Lua sources
 luac.out
 
