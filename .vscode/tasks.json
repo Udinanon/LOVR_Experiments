@@ -17,7 +17,7 @@
         {
             "label": "ADB Connect TCP/IP ",
             "type": "shell",
-            "command": "scrcpy --tcpip",
+            "command": "adb devices -l; adb tcpip 5555; adb shell ip route | awk '{print $9}' | adb connect $(</dev/stdin):5555",
             "problemMatcher": [],
             "options": {
                 "statusbar": {
@@ -134,6 +134,16 @@
             "label": "ADB v0.16 Debug Project",
             "type": "shell",
             "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.app/files;adb shell am force-stop org.lovr.app; adb shell am start org.lovr.app/org.lovr.app.Activity; adb logcat -s LOVR;",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "ADB vCustom Debug Project",
+            "type": "shell",
+            "command": "adb push --sync ${workspaceFolder}/Project/. /sdcard/Android/data/org.lovr.custom/files;adb shell am force-stop org.lovr.custom; adb shell am start org.lovr.custom/org.lovr.custom.Activity; adb logcat -s LOVR;",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

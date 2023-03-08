@@ -365,4 +365,11 @@ function Utils.map(table, f)
     return t
 end
 
+---return sign of number, 1/-1
+---@param x number
+---@return integer
+function Utils.sign(x)
+    return (x < 0 and -1) or 1
+end
+
 return Utils
