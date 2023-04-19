@@ -446,3 +446,6 @@ There are some bugs regarding buffers, specifically using Vec3 causes weird erro
 
 
 
+## Docs
+using the recommended extensions you can write and compile useful documentation for your modules and functions
+https://emmylua.github.io/annotations/param.html
