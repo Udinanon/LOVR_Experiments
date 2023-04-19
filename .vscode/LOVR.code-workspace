@@ -6,7 +6,7 @@
 	],
 	"settings": {
 		"Lua.workspace.library": [
-			"/home/udinanon/Lua/LOVR/API Docs/lovr-docs-master/api"
+			"/home/udinanon/LOVR/Code/API Docs/lovr-docs-master/"
 		]
 	}
 }

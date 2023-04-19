@@ -39,7 +39,7 @@
         {
             "label": "Stream screen",
             "type": "shell",
-            "command": "scrcpy -m 1280 --max-fps=24 -b 1M",
+            "command": "scrcpy -m 1280 --max-fps=24 -b 2M",
             "problemMatcher": [],
             "options": {
                 "statusbar": {
