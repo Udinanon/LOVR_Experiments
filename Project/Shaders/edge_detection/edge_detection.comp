@@ -1,43 +1,38 @@
-// what is this??
-layout(local_size_x = 8, local_size_y = 8) in;
-// why do only set 0 binding 0 work?
+// local workgroup size
+layout(local_size_x = 16, local_size_y = 16) in;
+// set 0 1nd 1 are occupied only on Vertex and Fragment shaders
 layout(set = 0, binding = 0, rgba8) uniform image2D image;
 layout(set = 0, binding = 0, rgba8) uniform image2D out_image;
 
+#define KERNEL_SIZE 9
 
 void lovrmain() {
+    float Kernel[KERNEL_SIZE] = {0., -1., -0., 
+                                 -1., 5., -1., 
+                                 0., -1., -0.}; 
+    
+    ivec2 KernelOffsets[KERNEL_SIZE] = {ivec2(-1, -1), ivec2(0, -1), ivec2(1, -1),
+                                        ivec2(-1, 0), ivec2(0, 0), ivec2(1, 0), 
+                                        ivec2(-1, 1), ivec2(0, 1), ivec2(1, 1)};
 
     ivec2 size = imageSize(image);
-    // i think this is the position in the workgroup? so which pixel it should be processing?
     ivec2 pixel = ivec2(GlobalThreadID.xy);
 
-    // ?
-    if (pixel.x >= (size.x - 1) || pixel.y >= (size.y - 1) || pixel.x < 1 || pixel.y < 1) {
+    // Skip if position does not exist in image
+    if (pixel.x >= (size.x) || pixel.y >= (size.y) || pixel.x < 0 || pixel.y < 0) {
         return;
     }
-
-    vec4 color = imageLoad(image, pixel);
-    
-    //color.rgb = vec3(color.r * .2126 + color.g * .7512 + color.b * .0722);
-    vec4 final_color = vec4(0, 0, 0, 1);
-    
-    ivec2 tmp_pixel = pixel;
-    tmp_pixel.y -= 1;
-    color = imageLoad(image, tmp_pixel);
-    final_color.rgb += vec3(color.r * .2126 + color.g * .7512 + color.b * .0722) * .5;
-    
-    tmp_pixel.y += 2;
-    color = imageLoad(image, tmp_pixel);
-    final_color.rgb -= vec3(color.r * .2126 + color.g * .7512 + color.b * .0722) * .5;
-
-    tmp_pixel = pixel;
-    tmp_pixel.x -= 1;
-    color = imageLoad(image, tmp_pixel);
-    final_color.rgb += vec3(color.r * .2126 + color.g * .7512 + color.b * .0722) * .5;
-    
-    tmp_pixel.x += 2;
-    color = imageLoad(image, tmp_pixel);
-    final_color.rgb -= vec3(color.r * .2126 + color.g * .7512 + color.b * .0722) * .5;
+    int i = 0;
+    vec4 final_color = vec4(0.0);
+   
+    for(i = 0; i < KERNEL_SIZE; i++ ){
+        vec4 tmp = vec4(0);
+        // check that pixel to read exists
+        if (!((pixel + KernelOffsets[i]).x >= (size.x) || (pixel + KernelOffsets[i]).y >= (size.y) || (pixel + KernelOffsets[i]).x < 0 || (pixel + KernelOffsets[i]).y < 0)) {
+            tmp = imageLoad(image, pixel + KernelOffsets[i]);
+        }
+        final_color += tmp * Kernel[i];
+    }
 
     imageStore(out_image, pixel, final_color);
 }
