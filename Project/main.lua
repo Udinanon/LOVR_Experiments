@@ -2,7 +2,7 @@
 
 Utils = require "Utils"
 Graphs = require "Graphs"
-edge_detector = require "Shaders/edge_detection"
+breathing = require "Shaders/breathing"
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   print("LODR LOAD")
@@ -23,7 +23,7 @@ function lovr.load()
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
 
-  edge_detector:init() 
+  breathing:init()
   
   Graph = Graphs:new()
   Graph:setVisible()
@@ -91,7 +91,7 @@ end
 
 -- this draws obv
 function lovr.draw(pass)
-  edge_detector:detect(pass)
+  breathing:demo(pass)
 
   -- draw hands
   if State:isNormal() then
