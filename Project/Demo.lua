@@ -102,6 +102,12 @@ function Demo:setup_inputs()
 
     --main weakness is lack of defaults. if something was not recorderd or not available, the program fails
     -- either we return some fdefaults or we learn howt o say "unavailable"
+
+    -- normally, if a device is not available, false is returned
+    -- for unpacks, we read from the data, and if missing, the nil is substituted with a 0 position
+    -- but others instad have the issue that delving deep into non existing tables fails instead of returning nil
+    -- for these we use if guards. the implied return now is empty. not nil
+    -- so we retunr a false or { 0  0}
     -- lovr.headset.getOrientation is missing!
     lovr.headset.getHands = function()
         return headsetData.hands
@@ -110,49 +116,97 @@ function Demo:setup_inputs()
         return headsetData.tracked[device] or false
     end
     lovr.headset.getPose = function(device)
-        local x, y, z, angle, ax, ay, az = unpack(headsetData.pose[device or 'head'])
+        local data = headsetData.pose[device or 'head'] or {0, 0, 0, 0, 0, 0, 0}
+        local x, y, z, angle, ax, ay, az = unpack(data)
         x = x + offset.x
         y = y + offset.y
         z = z + offset.z
         return x, y, z, angle, ax, ay, az
     end
     lovr.headset.getPosition = function(device)
-        local x, y, z = unpack(headsetData.pose[device or 'head'] or {0, 0, 0})
+        local data = headsetData.pose[device or 'head'] or { 0, 0, 0, 0, 0, 0, 0 }
+        local x, y, z = unpack(data)
         x = x + offset.x
         y = y + offset.y
         z = z + offset.z
         return x, y, z
     end
     lovr.headset.getVelocity = function(device)
-        return unpack(headsetData.velocity[device or 'head'])
+        local data = headsetData.velocity[device or 'head'] or {0, 0, 0}
+        return unpack(data)
     end
     lovr.headset.getAngularVelocity = function(device)
-        return unpack(headsetData.angularVelocity[device or 'head'])
+        local data = headsetData.angularVelocity[device or 'head'] or { 0, 0, 0 }
+        return unpack(data)
     end
     lovr.headset.getSkeleton = function(hand)
         return headsetData.skeleton[hand]
     end
     lovr.headset.isTouched = function(hand, button)
-        return headsetData.isTouched[hand][button] or false
+        if headsetData.isTouched[hand] then
+            return headsetData.isTouched[hand][button] or false
+        end
+        return false
     end
     lovr.headset.isDown = function(hand, button)
-        return headsetData.isDown[hand][button] or false
+        if headsetData.isDown[hand] then
+            return headsetData.isDown[hand][button] or false
+        end
+        return false
     end
     lovr.headset.wasPressed = function(hand, button)
-        return headsetData.wasPressed[hand][button] or false
+        if headsetData.wasPressed[hand] then
+            return headsetData.wasPressed[hand][button] or false
+        end
+        return false
     end
     lovr.headset.wasReleased = function(hand, button)
-        return headsetData.wasReleased[hand][button] or false
+        if headsetData.wasReleased[hand] then
+            return headsetData.wasReleased[hand][button] or false
+        end
+        return false
     end
     lovr.headset.getAxis = function(hand, axis)
         if headsetData.axes[hand] then
             return unpack(headsetData.axes[hand][axis])
         end
+        return 0, 0 -- guard aganist unavailables axes, as all are 1D or 2D
     end
 end
 
 function Demo:update_inputs()
     _, headsetData = serpent.load(Demo.file:read("*l"))
+end
+
+function Demo:test_inputs()
+    -- on some cases, isDown and isTouched can return nothing. not nil, nothing
+    print("Types")
+    print(type(lovr.headset.getHands()))
+    print(type(lovr.headset.isTracked("hand/right")))          -- boolean
+    print(type(lovr.headset.getPose("hand/right")))            -- 7 number
+    print(type(lovr.headset.getPosition("hand/right")))        -- 3 numb
+    print(type(lovr.headset.getVelocity("hand/right")))        -- 3 numb
+    print(type(lovr.headset.getAngularVelocity("hand/right"))) --
+    print(type(lovr.headset.getSkeleton("hand/right")))        -- nil
+    print(type(lovr.headset.wasPressed("hand/right", "a")))
+    print(type(lovr.headset.wasReleased("hand/right", "a")))
+    print(type(lovr.headset.getAxis("hand/right", "thumbstick")))
+
+    print("Values")
+    print(lovr.headset.getHands()) -- table
+    print(lovr.headset.isTracked("hand/right")) -- boolean
+    print(lovr.headset.getPose("hand/right")) -- 7 number
+    print(lovr.headset.getPosition("hand/right")) -- 3 number
+    print(lovr.headset.getVelocity("hand/right")) -- 3 number
+    print(lovr.headset.getAngularVelocity("hand/right")) -- 3 number
+    print(lovr.headset.getSkeleton("hand/right")) -- nil
+    print(lovr.headset.isTouched("hand/right", "a"))  -- empty
+    print(lovr.headset.isDown("hand/right", "a")) -- empty
+    print(lovr.headset.wasPressed("hand/right", "a")) --boolean
+    print(lovr.headset.wasReleased("hand/right", "a")) -- boolean
+    print(lovr.headset.getAxis("hand/right", "thumbstick")) -- 2 number
+
+
 end
 
 return Demo
