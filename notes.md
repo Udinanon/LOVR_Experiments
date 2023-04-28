@@ -114,12 +114,41 @@ Or you can just add the restart to your ADB command
 
 
 ## Math
-Quaterniions are used for rotation systems in LOVR.
+Quaternions are used for rotation systems in LOVR.
 
 They represent rotations, so they have also an axis of rotation 
 you can also multiply a 3d vector by them and rotate it, if you multiply a coordinate vector you get that vector rotated by that quaternion, or inversely that direction in the coordinate system define by the quaternion.
 
 Mat4 for rototranslations are "column-major 4x4 homogeneous transformation matrices"
+
+### Mat4
+
+Since v0.16, most operations and shapes are now focused more on using Matrices.
+These can be scary at first, but are a great way to handle all geometric elaborations together instead of splitting them into different pieces and having to combine everything at the end
+
+Matrices can store position, rotation and scaling all together.
+
+These values can be set at initialization, but can also be set later.
+
+Direction is set via `:translate()`, using raw values or a `vec3`
+
+Scale is set using `:scale()`
+
+Rotation is set using `:rotate()`, but here understanding how to use quaternions can make this much more useful
+
+#### Quats and Mat4s
+
+Quaternions can be used to rotate an element around an axis, arbitrarily. These rotations can also be chained to do come complex movements and rotations.
+
+But to set the orientation of an object to a specific direction, this can become cumbersome, and even a simple approach requires a cross product and some 3D geometry
+
+but if we have an idea of what direction we want the object to face, and we're starting from the object with rotation (0, 0, 0, 0), we can just use `:rotate(quat(desired_direction_vec3))` and the object will be facing the desired direction, barring rotation around the axis
+
+This operation works only if the object has not been rotated yet, or the combined result will be hard to predict
+
+#### Mat4
+
+Mat4 should be conceptualized as not positions or rotations, but full reference frames. These can be moved, rotated and scaled, and these operations are applied sequentially, every time to the next version of the reference frame, so they are not order independent.  
 
 ## Graphics
 rendering textures on 2d objects needs shaders, which is shit
@@ -159,48 +188,19 @@ Shaders can (and probably should) be loaded from files
 
 
 ### Vertex
-this shader computes the 3d geometrical properties of the model, having access to parameters such as vertex position, transform matrices for the view camera, the projection matrix and more
+This component of the Shader pipeline processes the 3D properties of the scene, applying perspectives and manipulations, cpmputing directions, moving vertices and more.
+It has access to many infomration about vertices and materials, normals and projection matrices
 
-the default is 
+The default is 
 ```glsl
-    vec4 position(mat4 projection, mat4 transform, vec4 vertex) {
-    return vertex;
+    vec4 lovrmain() {
+        return Projection * View * Transform * VertexPosition;
     }
 ```
 
-values can be exfiltrated to the Fragment shader by declaring a `out <type> <name>` variable and defining them in the shader code
+Values can be exfiltrated to the Fragment shader by declaring a `out <type> <name>` variable and defining them in the shader code
 
-some available values are 
-```glsl 
-in vec3 lovrPosition; // The vertex position in meters, relative to the model itself
-in vec3 lovrNormal; // The vertex normal vector
-in vec2 lovrTexCoord;
-in vec4 lovrVertexColor;
-in vec3 lovrTangent;
-in uvec4 lovrBones;
-in vec4 lovrBoneWeights;
-in uint lovrDrawID;
-out vec4 lovrGraphicsColor;
-uniform mat4 lovrModel; // 4x4 matrix with model world coords and rotation
-uniform mat4 lovrView;
-uniform mat4 lovrProjection;
-uniform mat4 lovrTransform; // Model-View matrix
-uniform mat3 lovrNormalMatrix; // Inverse-transpose of lovrModel
-uniform mat3 lovrMaterialTransform;
-uniform float lovrPointSize;
-uniform mat4 lovrPose[48];
-uniform int lovrViewportCount;
-uniform int lovrViewID;
-const mat4 lovrPoseMatrix; // Bone-weighted pose
-const int lovrInstanceID; // Current instance ID
-```
-
-we also have the default function inputs of `mat4 projection, mat4 transform, vec4 vertex`
-
-we can extract the vertex world position with 
-```glsl
-pos = vec3(lovrModel * vertex); //gives 3d world position
-```
+The available internal values can be read at https://lovr.org/docs/Shaders
 
 ### Fragment
 The fragment shader renders the pixel itself, getting the input from the Geometry Shader and computing from that, textures, diffuse and emissive textures, and other factors the color of the pixel
@@ -287,6 +287,33 @@ some codes for simple geometries can be found at
  - https://www.shadertoy.com/view/wdf3zl
  - http://blog.hvidtfeldts.net/index.php/2011/08/distance-estimated-3d-fractals-iii-folding-space/
  - https://iquilezles.org/articles/
+### Compute
+
+Extremely useful to execute highly parallel computations on the GPU
+
+They do not share many of the characteristics of Vertex and Fragments, they have no UVs or Vertices. The only inputs are Buffers, Constants, Uniforms and Textures loaded in memory, and some fundamental variables
+
+```glsl
+#define SubgroupCount gl_NumSubgroups
+#define WorkgroupCount gl_NumWorkGroups // uvec3 total number of workgroups
+#define WorkgroupSize gl_WorkGroupSize // uvec3 how many threads in a workgroup
+#define WorkgroupID gl_WorkGroupID // uvec3 index in the global workgroup
+#define GlobalThreadID gl_GlobalInvocationID // shorthand for WorkgroupID * WorkgroupSize + LocalThreadID
+#define LocalThreadID gl_LocalInvocationID // uvec3 position inside the workgroup
+#define LocalThreadIndex gl_LocalInvocationIndex // int 1D version of LocalThreadID
+```
+
+Workgroups are "small" groups of fully parallel threads, usually 32-64, these are defined at the beginning of the shader
+Multiple workgroups are executed at the same time to do something usually, which might run at the same time.
+
+Visualize position inside the local workgroup
+    final_color = vec4(vec3(LocalThreadID)/ vec3(WorkgroupSize), 1);
+Visualize position in the total compute shader
+    final_color = vec4(vec3(GlobalThreadID)/ (vec3(WorkgroupCount)*vec3(WorkgroupSize)), 1);
+Visualize the workgroup itself inside the total shader
+    final_color = vec4(vec3(WorkgroupID)/ vec3(WorkgroupCount), 1);
+
+https://www.taylorpetrick.com/blog/post/convolution-part1
 
 ## Network
 ### LuaJIT-requests
@@ -380,3 +407,43 @@ A very useful command to use in tasks is `play`. It can play audio files, but ca
 Gives a very nice Organ-like sound
 
 
+
+
+## Moving to v0.16
+
+texture and images do not support `rgb` anymore, either transparency or other methods are needed
+
+Materials are now generated with a table of values, which are passed to the shader pipeline
+
+texture filtering is no longer set via `:setFilter()`, it seems to be declared at creation only
+
+Textures are associated with materials at creation, and updates are more complex. They can still be updated but a transfer pass to mode data from the CPU to the GPU is now needed.
+
+`lovr.graphics` seems to have been downsized heavily, now using render passes, generated via `lovr.draw(pass)`
+
+cylinders and cones have different geometric descriptions, and it's unclear
+
+`graphics.print` is now `pass:text`
+
+some draw commands have been remixed, values moved around
+
+Operations that move data between CPU and GPU are now more complex, such as copying images into textures. These now require using a transfer pass, which has to be created and held until the end of the frame and submitted wit the draw pass. Submitting a pass ends the frame and any subsequent pass operations crashes LOVR.
+
+Materials are set at the pass, not at draw
+
+### Shaders
+these have been reworked quite a lot
+the now have their function endpoint at `lovrmain`, for both vertex and fragment
+functions no longer require input args
+the uniforms are much different, better documented, although some older entries seem to be missing
+we'll have to get some basic understanding of 3D camera geometry
+
+Buffers and Constants are now the main passageways between CPU and Shaders, with better documentation
+
+There are some bugs regarding buffers, specifically using Vec3 causes weird errors if you don't use layout = 140, or just use Vec4
+
+
+
+## Docs
+using the recommended extensions you can write and compile useful documentation for your modules and functions
+https://emmylua.github.io/annotations/param.html

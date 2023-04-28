@@ -12,7 +12,7 @@ function lovr.load()
   world = lovr.physics.newWorld()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
-
+  world:newBoxCollider(0, 0, 0, 50, .05, 50):setKinematic(true)
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal ()
@@ -22,14 +22,16 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
+
   Graph = Graphs:new()
-  --Graph:setVisible()
+  Graph:setVisible()
   Graph:drawAxes()
 
-  BlackBoard = Graphs:new(1, 4, nil)
-  --BlackBoard:setVisible()
+  BlackBoard = Graphs:new(1, 4)
+--  BlackBoard:drawPoint({1, 1}, {1, 1, 1, 1})
+  BlackBoard:setVisible()
   BlackBoard:drawAxes()
-  BlackBoard:setPose({ 0, 1.5, 1 }, { 0, 0, -1, 0 })
+  BlackBoard:setPose(mat4(vec3(0, 1.5, 1), quat(0, 0, 0, 1)))
 
 end
 
@@ -44,21 +46,21 @@ function lovr.update(dt)
       Utils.addVector(lovr.math.newVec3(lovr.headset.getPosition("right")), lovr.math.newVec3(lovr.headset.getVelocity("right")), curr_color, true)
       -- create cube there with color and shift it slightly
       color[1] = color[1]+40
+      Utils.addBox(vec3(lovr.headset.getPosition("right")))
     end 
       
       -- if left trigger is pressed
     if lovr.headset.wasPressed("left", "trigger") then
-      print("HERE")
+      print("Left Click")
       
       Graph:reposition()
     end
   end
 
   -- update blackboard
-  local time = lovr.timer.getTime()
   for i, hand in ipairs(lovr.headset.getHands()) do
     local position = lovr.math.vec3(lovr.headset.getPosition(hand))
-    Graph:drawPoint({position.x, position.z}, {i*100, 1, 1, 1})
+    Graph:drawPoint({position.x, position.z}, {10, 1, 1, 1})
   end
 
   
@@ -69,6 +71,7 @@ function lovr.update(dt)
     -- clear all
       Graph:clean()
       BlackBoard:clean()
+      Utils.boxes = {}
   end
 
   if lovr.headset.wasPressed("right", "a") then
@@ -90,54 +93,30 @@ function lovr.update(dt)
 end
 
 -- this draws obv
-function lovr.draw()
-  local start_point = lovr.math.newVec3(-0, .5, .5)
-  Utils.addLabel("start_point", start_point)
-
-  local quaternion = lovr.math.newQuat()
-  Utils.addVector(start_point, quaternion:direction(), { .5, .1, 1, 1 })
-  Utils.addLabel("empty_quat", start_point + quaternion:direction())
-
-  local hand_quat = quat(lovr.headset.getOrientation("hand/right"))
-  
-  local x_axis = lovr.math.newVec3(-1, 0, 0)
-  local rotated_vec = hand_quat:mul(x_axis)
-  Utils.addVector(start_point, rotated_vec, { .5, .2, 1, 1 })
-  Utils.addLabel("hand_quat_x", start_point + rotated_vec)
-
-  local y_axis = lovr.math.newVec3(0, -1, 0)
-  local rotated_vec = hand_quat:mul(y_axis)
-  Utils.addVector(start_point, rotated_vec, { .5, .2, 1, 1 })
-  Utils.addLabel("hand_quat_y", start_point + rotated_vec)
-
-  local q2 = lovr.math.newQuat(vec3(0, -1, 0))
-  local tmp = lovr.math.newVec3(1, 0, 0)
-  local tmp = q2:mul(tmp)
-  --local tmp = hand_quat:mul(tmp)
-  Utils.addVector(start_point, tmp, {.5, .3, .8, 1})
-  Utils.addLabel("double_quat", start_point + tmp)
+function lovr.draw(pass)
 
 
+  Utils.drawVectors(pass)
+  --Utils.drawLabels(pass)
 
-  Utils.drawVectors()
-  Utils.drawLabels()
-
-  -- draw blackboard
-  Graphs:drawAll()
   
   -- draw hands
   if State:isNormal() then
-    Utils.drawHands(0xffffff)
+    Utils.drawHands(pass, 0xffffff)
   end
   if State["A"] then
-    Utils.drawHands(0x0000ff)
+    Utils.drawHands(pass, 0x0000ff)
   end
   if State["B"] then
-    Utils.drawHands(0x00ff00)
+    Utils.drawHands(pass, 0x00ff00)
   end
+  -- draw blackboard
+  local transfer_pass = lovr.graphics.getPass("transfer")
+  Graphs:drawAll(pass, transfer_pass)
+  Utils.drawBounds(pass)
+  Utils.drawAxes(pass)
+  
 
-  Utils.drawBoxes()
-  Utils.drawVolumes()
-  Utils.drawAxes()
-  Utils.drawBounds()
+  Utils.drawBoxes(pass)
+  lovr.graphics.submit({ pass, transfer_pass })
 end
