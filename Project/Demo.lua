@@ -8,6 +8,8 @@ local Demo = {}
 
 local serpent = serpent or require("serpent")
 
+
+---Internal function to prepare needed variables
 function Demo:init_enums()
     -- this is local in main in the Playback, so local here is problematic
     -- moved to Demo.?? 
@@ -37,6 +39,8 @@ end
 
 Demo:init_enums()
 
+---Prepare to write demo to filename
+---@param filename string Name of file to open
 function Demo:init_writing(filename)
     local filename = filename or "demo.txt"
     -- might want to chek for file existance before?
@@ -47,6 +51,7 @@ function Demo:init_writing(filename)
     Demo.file = filename
 end
 
+---Record to Demo.file current state of inputs
 function Demo:record_state()
     headsetData.hands = lovr.headset.getHands()
     headsetData.tracked = {}
@@ -86,18 +91,8 @@ function Demo:record_state()
 
 end
 
-function Demo:init_read(filename)
-    local filename = filename or "demo.txt"
-    -- might want to chek for file existance before?
-    local file = assert(io.open(filename, "r"))
-    print("Opened demo.txt")
-    Demo.file = file
-    Demo:update_inputs()
-    print(serpent.dump(headsetData))
-end
-
+---Update LOVR inputs to be supplied via headsetData
 function Demo:setup_inputs()
-
     -- monkey-patch LOVR headset functions so they return data from actual headset
 
     --main weakness is lack of defaults. if something was not recorderd or not available, the program fails
@@ -121,7 +116,7 @@ function Demo:setup_inputs()
         elseif device == "right" then
             device = "hand/left"
         end
-        local data = headsetData.pose[device or 'head'] or {0, 0, 0, 0, 0, 0, 0}
+        local data = headsetData.pose[device or 'head'] or { 0, 0, 0, 0, 0, 0, 0 }
         local x, y, z, angle, ax, ay, az = unpack(data)
         x = x + offset.x
         y = y + offset.y
@@ -147,7 +142,7 @@ function Demo:setup_inputs()
         elseif device == "right" then
             device = "hand/left"
         end
-        local data = headsetData.velocity[device or 'head'] or {0, 0, 0}
+        local data = headsetData.velocity[device or 'head'] or { 0, 0, 0 }
         return unpack(data)
     end
     lovr.headset.getAngularVelocity = function(device)
@@ -224,8 +219,26 @@ function Demo:setup_inputs()
     end
 end
 
-function Demo:update_inputs()
-    _, headsetData = serpent.load(Demo.file:read("*l"))
+---Open demo from filename and load first frame of inputs
+---@param filename string Filename to open
+function Demo:init_read(filename)
+    local filename = filename or "demo.txt"
+    -- might want to chek for file existance before?
+    local file = assert(io.open(filename, "r"))
+    print("Opened "..filename)
+    Demo.file = file
+    Demo:read_inputs()
+    print(serpent.dump(headsetData))
+end
+
+---Update headsetData from Demo.file
+---@return nil
+function Demo:read_inputs()
+    local data = Demo.file:read("*l")
+    if data == nil then
+        return nil
+    end
+    _, headsetData = serpent.load(data)
 end
 
 function Demo:test_inputs()
@@ -255,8 +268,6 @@ function Demo:test_inputs()
     print(lovr.headset.wasPressed("hand/right", "a")) --boolean
     print(lovr.headset.wasReleased("hand/right", "a")) -- boolean
     print(lovr.headset.getAxis("hand/right", "thumbstick")) -- 2 number
-
-
 end
 
 return Demo

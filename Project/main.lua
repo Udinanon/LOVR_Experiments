@@ -3,6 +3,9 @@
 Utils = require "Utils"
 Graphs = require "Graphs"
 
+Demo = require "Demo"
+Demo:setup_inputs()
+
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   print("LODR LOAD")
@@ -22,6 +25,8 @@ function lovr.load()
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
+  Demo:init_read("1.txt")
+
 
   Graph = Graphs:new()
   Graph:setVisible()
@@ -37,6 +42,7 @@ end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
+  Demo:read_inputs()
   -- update physics, like magic
   world:update(dt)
 
