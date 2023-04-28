@@ -187,48 +187,19 @@ Shaders can (and probably should) be loaded from files
 
 
 ### Vertex
-this shader computes the 3d geometrical properties of the model, having access to parameters such as vertex position, transform matrices for the view camera, the projection matrix and more
+This component of the Shader pipeline processes the 3D properties of the scene, applying perspectives and manipulations, cpmputing directions, moving vertices and more.
+It has access to many infomration about vertices and materials, normals and projection matrices
 
-the default is 
+The default is 
 ```glsl
-    vec4 position(mat4 projection, mat4 transform, vec4 vertex) {
-    return vertex;
+    vec4 lovrmain() {
+        return Projection * View * Transform * VertexPosition;
     }
 ```
 
-values can be exfiltrated to the Fragment shader by declaring a `out <type> <name>` variable and defining them in the shader code
+Values can be exfiltrated to the Fragment shader by declaring a `out <type> <name>` variable and defining them in the shader code
 
-some available values are 
-```glsl 
-in vec3 lovrPosition; // The vertex position in meters, relative to the model itself
-in vec3 lovrNormal; // The vertex normal vector
-in vec2 lovrTexCoord;
-in vec4 lovrVertexColor;
-in vec3 lovrTangent;
-in uvec4 lovrBones;
-in vec4 lovrBoneWeights;
-in uint lovrDrawID;
-out vec4 lovrGraphicsColor;
-uniform mat4 lovrModel; // 4x4 matrix with model world coords and rotation
-uniform mat4 lovrView;
-uniform mat4 lovrProjection;
-uniform mat4 lovrTransform; // Model-View matrix
-uniform mat3 lovrNormalMatrix; // Inverse-transpose of lovrModel
-uniform mat3 lovrMaterialTransform;
-uniform float lovrPointSize;
-uniform mat4 lovrPose[48];
-uniform int lovrViewportCount;
-uniform int lovrViewID;
-const mat4 lovrPoseMatrix; // Bone-weighted pose
-const int lovrInstanceID; // Current instance ID
-```
-
-we also have the default function inputs of `mat4 projection, mat4 transform, vec4 vertex`
-
-we can extract the vertex world position with 
-```glsl
-pos = vec3(lovrModel * vertex); //gives 3d world position
-```
+The available internal values can be read at https://lovr.org/docs/Shaders
 
 ### Fragment
 The fragment shader renders the pixel itself, getting the input from the Geometry Shader and computing from that, textures, diffuse and emissive textures, and other factors the color of the pixel
@@ -315,6 +286,33 @@ some codes for simple geometries can be found at
  - https://www.shadertoy.com/view/wdf3zl
  - http://blog.hvidtfeldts.net/index.php/2011/08/distance-estimated-3d-fractals-iii-folding-space/
  - https://iquilezles.org/articles/
+### Compute
+
+Extremely useful to execute highly parallel computations on the GPU
+
+They do not share many of the characteristics of Vertex and Fragments, they have no UVs or Vertices. The only inputs are Buffers, Constants, Uniforms and Textures loaded in memory, and some fundamental variables
+
+```glsl
+#define SubgroupCount gl_NumSubgroups
+#define WorkgroupCount gl_NumWorkGroups // uvec3 total number of workgroups
+#define WorkgroupSize gl_WorkGroupSize // uvec3 how many threads in a workgroup
+#define WorkgroupID gl_WorkGroupID // uvec3 index in the global workgroup
+#define GlobalThreadID gl_GlobalInvocationID // shorthand for WorkgroupID * WorkgroupSize + LocalThreadID
+#define LocalThreadID gl_LocalInvocationID // uvec3 position inside the workgroup
+#define LocalThreadIndex gl_LocalInvocationIndex // int 1D version of LocalThreadID
+```
+
+Workgroups are "small" groups of fully parallel threads, usually 32-64, these are defined at the beginning of the shader
+Multiple workgroups are executed at the same time to do something usually, which might run at the same time.
+
+Visualize position inside the local workgroup
+    final_color = vec4(vec3(LocalThreadID)/ vec3(WorkgroupSize), 1);
+Visualize position in the total compute shader
+    final_color = vec4(vec3(GlobalThreadID)/ (vec3(WorkgroupCount)*vec3(WorkgroupSize)), 1);
+Visualize the workgroup itself inside the total shader
+    final_color = vec4(vec3(WorkgroupID)/ vec3(WorkgroupCount), 1);
+
+https://www.taylorpetrick.com/blog/post/convolution-part1
 
 ## Network
 ### LuaJIT-requests
