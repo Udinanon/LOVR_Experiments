@@ -116,6 +116,11 @@ function Demo:setup_inputs()
         return headsetData.tracked[device] or false
     end
     lovr.headset.getPose = function(device)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
         local data = headsetData.pose[device or 'head'] or {0, 0, 0, 0, 0, 0, 0}
         local x, y, z, angle, ax, ay, az = unpack(data)
         x = x + offset.x
@@ -124,6 +129,11 @@ function Demo:setup_inputs()
         return x, y, z, angle, ax, ay, az
     end
     lovr.headset.getPosition = function(device)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
         local data = headsetData.pose[device or 'head'] or { 0, 0, 0, 0, 0, 0, 0 }
         local x, y, z = unpack(data)
         x = x + offset.x
@@ -132,43 +142,83 @@ function Demo:setup_inputs()
         return x, y, z
     end
     lovr.headset.getVelocity = function(device)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
         local data = headsetData.velocity[device or 'head'] or {0, 0, 0}
         return unpack(data)
     end
     lovr.headset.getAngularVelocity = function(device)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
         local data = headsetData.angularVelocity[device or 'head'] or { 0, 0, 0 }
         return unpack(data)
     end
-    lovr.headset.getSkeleton = function(hand)
-        return headsetData.skeleton[hand]
+    lovr.headset.getSkeleton = function(device)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        return headsetData.skeleton[device]
     end
-    lovr.headset.isTouched = function(hand, button)
-        if headsetData.isTouched[hand] then
-            return headsetData.isTouched[hand][button] or false
+    lovr.headset.isTouched = function(device, button)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        if headsetData.isTouched[device] then
+            return headsetData.isTouched[device][button] or false
         end
         return false
     end
-    lovr.headset.isDown = function(hand, button)
-        if headsetData.isDown[hand] then
-            return headsetData.isDown[hand][button] or false
+    lovr.headset.isDown = function(device, button)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        if headsetData.isDown[device] then
+            return headsetData.isDown[device][button] or false
         end
         return false
     end
-    lovr.headset.wasPressed = function(hand, button)
-        if headsetData.wasPressed[hand] then
-            return headsetData.wasPressed[hand][button] or false
+    lovr.headset.wasPressed = function(device, button)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        if headsetData.wasPressed[device] then
+            return headsetData.wasPressed[device][button] or false
         end
         return false
     end
-    lovr.headset.wasReleased = function(hand, button)
-        if headsetData.wasReleased[hand] then
-            return headsetData.wasReleased[hand][button] or false
+    lovr.headset.wasReleased = function(device, button)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        if headsetData.wasReleased[device] then
+            return headsetData.wasReleased[device][button] or false
         end
         return false
     end
-    lovr.headset.getAxis = function(hand, axis)
-        if headsetData.axes[hand] then
-            return unpack(headsetData.axes[hand][axis])
+    lovr.headset.getAxis = function(device, axis)
+        if device == "left" then
+            device = "hand/left"
+        elseif device == "right" then
+            device = "hand/left"
+        end
+        if headsetData.axes[device] then
+            return unpack(headsetData.axes[device][axis])
         end
         return 0, 0 -- guard aganist unavailables axes, as all are 1D or 2D
     end
