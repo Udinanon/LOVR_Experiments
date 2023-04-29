@@ -34,8 +34,9 @@ end
 
 ---Calls shaders and updates internal values
 ---@param pass lovr.Pass
----@param transfer_pass lovr.Pass
-function MultiLight:update_shader(pass, transfer_pass)
+---@param transfer_pass lovr.Pass Transfer pass
+function MultiLight:load(pass, transfer_pass)
+    pass:setShader(self.shader)
     -- update data from table to buffer
     transfer_pass:copy(self.positions, self.buffer)
     -- send constant to shader 
@@ -47,8 +48,8 @@ function MultiLight:update_shader(pass, transfer_pass)
 end
 
 ---Reposition light sources cyclically
----@param position lovr.Vec3
-function MultiLight:reposition(position)
+---@param position lovr.Vec3 
+function MultiLight:update(position)
     self.positions[self.index] = lovr.math.newVec4(position.x, position.y, position.z, 1)
     print(self.positions[self.index])
     -- Update use modulo and add 1 as arrays are 1 index

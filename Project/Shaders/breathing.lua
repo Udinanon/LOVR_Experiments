@@ -5,8 +5,14 @@ function breathing:init()
     
 end
 
+function breathing:load(pass)
+    pass:setShader(self.shader)
+    pass:send("time", lovr.timer.getTime())
+end
+
+
 function breathing:demo(pass)
-    pass:setShader(breathing.shader)
+    pass:setShader(self.shader)
     pass:send("time", lovr.timer.getTime())
     pass:sphere(1, 1, 1)
     pass:setShader()
