@@ -2,13 +2,10 @@
 
 Utils = require "Utils"
 Graphs = require "Graphs"
-breathing = require "Shaders/breathing"
--- run on boot of the program, where all the setup happes
+Breathing = require "Shaders/breathing"
+
 function lovr.load()
-  print("LODR LOAD")
-  -- prepare for the color wheel thing
-  color = {0, 1, 1, 1}
-  -- this runs the physics, here we also set some global constants
+  
   world = lovr.physics.newWorld()
   world:setLinearDamping(.01)
   world:setAngularDamping(.005)
@@ -16,59 +13,23 @@ function lovr.load()
   --used to track if buttons were pressed
   State = {["A"] = false, ["B"] = false, ["X"] = false, ["Y"] = false}
   function State:isNormal()
-    -- check uf no state is normals
+    -- check if no state is normals
     return (not State["A"] and not State["B"] and not State["X"] and not State["Y"])
   end
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
-
-  breathing:init()
-  
-  Graph = Graphs:new()
-  Graph:setVisible()
-  Graph:drawAxes()
-
-  BlackBoard = Graphs:new(1, 4)
-  BlackBoard:setVisible()
-  BlackBoard:drawAxes()
-  BlackBoard:setPose(mat4(vec3(0, 1.5, 1), quat(0, 0, 0, 1)))
+  Breathing:init()
 
 end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
-  --shader:send('viewPos', {lovr.headset.getPosition("head")})
-  --shader:send("time", lovr.timer.getTime())
-  -- update physics
   world:update(dt)
-
-  if State:isNormal() then
-    if lovr.headset.wasPressed("right", 'trigger') then
-    end 
-      
-      -- if left trigger is pressed
-    if lovr.headset.wasPressed("left", "trigger") then
-      Graph:reposition()
-
-    end
-  end
-
-
-  -- update blackboard
-  for i, hand in ipairs(lovr.headset.getHands()) do
-    local position = lovr.math.vec3(lovr.headset.getPosition(hand))
-    Graph:drawPoint({position.x, position.z}, {10, 1, 1, 1})
-  end
-
   
-
-
   -- when both grips are pressed, kinda finnicky but ok
   if lovr.headset.wasPressed("left", 'grip') and lovr.headset.wasPressed("right", 'grip') then
     -- clear all
-      Graph:clean()
-      BlackBoard:clean()
       Utils.boxes = {}
   end
 
@@ -86,31 +47,26 @@ function lovr.update(dt)
     end
   end
 
+  if lovr.system.isKeyDown("space") then
+    print("SPACE")
+    --Phong:update(vec3(lovr.headset.getPosition("left")))
+  end
+
 
 end
 
 -- this draws obv
 function lovr.draw(pass)
-  breathing:demo(pass)
-
-  -- draw hands
-  if State:isNormal() then
-    Utils.drawHands(pass, 0xffffff)
-  end
-  if State["A"] then
-    Utils.drawHands(pass, 0x0000ff)
-  end
-  if State["B"] then
-    Utils.drawHands(pass, 0x00ff00)
-  end
-  -- draw blackboard
-  local transfer_pass = lovr.graphics.getPass("transfer")
-  Graphs:drawAll(pass, transfer_pass)
+  --Lights:draw_lights(pass)
+  local transfer = lovr.graphics.getPass("transfer")
+  --Lights:load(pass, transfer)
+  Breathing:load(pass)
+  pass:cube(vec3(2, 0, 1), .3, quat(), "fill")
+  pass:sphere(.3, .3, .3)
+  pass:setShader()
+  Utils.drawHands(pass, 0xffffff)
   Utils.drawBounds(pass)
   Utils.drawAxes(pass)
-  
 
-  Utils.drawAxes(pass)
-  Utils.drawBounds(pass)
-  return lovr.graphics.submit({ pass, transfer_pass })
+  return lovr.graphics.submit({ pass, transfer })
 end
