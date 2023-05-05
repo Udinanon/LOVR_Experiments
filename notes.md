@@ -186,7 +186,11 @@ The shader can also be used on the entire eye image by more complex usage of can
 
 Shaders can (and probably should) be loaded from files
 
-
+Links: 
+ - [LOVR Shaders](https://lovr.org/docs/Shaders)
+ - [Mozilla intro to Shaders](https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_on_the_web/Basic_theory)
+ - [LOVR basic Lighting](https://lovr.org/docs/v0.16.0/Simple_Lighting)
+ - [WebGL Fundamentals intro](https://webglfundamentals.org/webgl/lessons/webgl-shaders-and-glsl.html)
 ### Vertex
 This component of the Shader pipeline processes the 3D properties of the scene, applying perspectives and manipulations, cpmputing directions, moving vertices and more.
 It has access to many infomration about vertices and materials, normals and projection matrices

@@ -2,10 +2,13 @@
 
 Utils = require "Utils"
 Graphs = require "Graphs"
+Stereo = require("Stereo")
+ANDROID = lovr.system.getOS() == 'Android'
 
 -- run on boot of the program, where all the setup happes
 function lovr.load()
   print("LODR LOAD")
+  Stereo:init("3d")
   -- prepare for the color wheel thing
   color = {0, 1, 1, 1}
   -- this runs the physics, here we also set some global constants
@@ -37,6 +40,7 @@ end
 
 -- runs at each dt interval, where you do input and physics
 function lovr.update(dt)
+  Stereo:setHeadPose(lovr.headset.getPose())
   -- update physics, like magic
   world:update(dt)
 
@@ -93,7 +97,7 @@ function lovr.update(dt)
 end
 
 -- this draws obv
-function lovr.draw(pass)
+function draw(pass)
 
 
   Utils.drawVectors(pass)
@@ -119,4 +123,20 @@ function lovr.draw(pass)
 
   Utils.drawBoxes(pass)
   lovr.graphics.submit({ pass, transfer_pass })
+end
+
+function lovr.draw(pass)
+  if ANDROID then
+    return draw(pass)
+  else
+    return lovr.graphics.submit(Stereo:render(draw))
+  end
+end
+
+function lovr.mirror(pass)
+  if ANDROID then
+    return true
+  else
+    Stereo:blit(pass)
+  end
 end

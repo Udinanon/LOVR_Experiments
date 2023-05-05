@@ -31,7 +31,8 @@
     ],
     "Lua.runtime.version": "LuaJIT",
     "Lua.workspace.library": [
-        "${3rd}/lovr/library"
+        "${3rd}/lovr/library",
+        "/home/udinanon/.config/VSCodium/User/globalStorage/sumneko.lua/addonManager/addons/lovr/module/library"
     ],
     "Lua.workspace.checkThirdParty": false,
     "Lua.completion.autoRequire": false
