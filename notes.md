@@ -148,7 +148,6 @@ but if we have an idea of what direction we want the object to face, and we're s
 
 This operation works only if the object has not been rotated yet, or the combined result will be hard to predict
 
-
 ## Graphics
 rendering textures on 2d objects needs shaders, which is shit
 BUT we can use canvases to generate the textures, apply the canvas to a Material, and then we don't need them!

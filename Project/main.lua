@@ -1,4 +1,6 @@
----@diagnostic disable: deprecated
+local Stereo = require("Stereo")
+---
+ANDROID = lovr.system.getOS() == 'Android'
 
 Utils = require "Utils"
 Graphs = require "Graphs"
@@ -20,11 +22,12 @@ function lovr.load()
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
 
   Breathing:init()
-
+  Stereo:init("3d")
 end
 
--- runs at each dt interval, where you do input and physics
+
 function lovr.update(dt)
+  Stereo:setHeadPose(lovr.headset.getPose())
   world:update(dt)
   
   -- when both grips are pressed, kinda finnicky but ok
@@ -56,7 +59,7 @@ function lovr.update(dt)
 end
 
 -- this draws obv
-function lovr.draw(pass)
+function draw(pass)
   --Lights:draw_lights(pass)
   local transfer = lovr.graphics.getPass("transfer")
   --Lights:load(pass, transfer)
@@ -69,4 +72,20 @@ function lovr.draw(pass)
   Utils.drawAxes(pass)
 
   return lovr.graphics.submit({ pass, transfer })
+end
+
+function lovr.draw(pass)
+  if ANDROID then
+    return draw(pass)
+  else
+    return lovr.graphics.submit(Stereo:render(draw))
+  end
+end
+
+function lovr.mirror(pass)
+  if ANDROID then
+    return true
+  else
+    Stereo:blit(pass)
+  end
 end
