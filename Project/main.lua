@@ -49,7 +49,7 @@ function lovr.update(dt)
 
   if lovr.system.isKeyDown("space") then
     print("SPACE")
-    --Phong:update(vec3(lovr.headset.getPosition("left")))
+    Breathing:update(vec3(lovr.headset.getPosition("left")))
   end
 
 
