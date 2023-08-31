@@ -3,6 +3,8 @@ ANDROID = lovr.system.getOS() == 'Android'
 Utils = require "Utils"
 Graphs = require "Graphs"
 
+vertex_art = require "Project.Shaders.vertex_art"
+
 function lovr.load()
   
   world = lovr.physics.newWorld()
@@ -17,7 +19,7 @@ function lovr.load()
   end
 
   lovr.graphics.setBackgroundColor(.1, .1, .1, 1)
-
+  vertex_art:init()
 end
 
 
@@ -53,9 +55,7 @@ function lovr.draw(pass)
   --Lights:draw_lights(pass)
   local transfer = lovr.graphics.getPass("transfer")
   --Lights:load(pass, transfer)
-  pass:cube(vec3(2, 0, 1), .3, quat(), "fill")
-  pass:sphere(.3, .3, .3)
-  pass:setShader()
+  vertex_art:demo(pass)
   Utils.drawHands(pass, 0xffffff)
   Utils.drawBounds(pass)
   Utils.drawAxes(pass)
