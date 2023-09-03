@@ -8,11 +8,28 @@ local vertex_art = {}
 -- Showcase and share
 -- Contact Gman
 
+---Adapt WebGL shader to OpenGL
+---@param shader_filename string
+---@return string
+function vertex_art:prepare_shader(shader_filename)
+    local shader_code = lovr.filesystem.read(shader_filename)
+    -- remmeber to escape ( in the match strings but not in the substitute strings!
+    shader_code = shader_code:gsub("#define PI", "// #define PI") -- Pi is already defined\
+    shader_code = shader_code:gsub("void main%(", "vec4 lovrmain(") -- change function main\
+    shader_code = shader_code:gsub("texture2D%(", "getPixel(") -- texture2D is WebGL, not compatible
+    shader_code = shader_code:gsub("varying ", "// varying") -- deprecated in 130 OpenGL
+    shader_code = shader_code:gsub("}%s*$", "\treturn Projection * View * Transform * gl_Position;\n}") -- return position and add geometry transforms
+    local header_shader = lovr.filesystem.read("Shaders/vertex_art/header.vert")
+    return header_shader .. shader_code
+end
+
 
 function vertex_art:init()
-    local headed_shader = lovr.filesystem.read("Shaders/vertex_art/header.vert") ..
-    lovr.filesystem.read("Shaders/vertex_art/demo_slash.vert")
-    vertex_art.shader = lovr.graphics.newShader(headed_shader, "Shaders/vertex_art/vertex_art.frag", {})
+    local shader_file = "Shaders/vertex_art/vs4.vert"
+    local prepared_shader = self:prepare_shader(shader_file)
+    print(prepared_shader)
+    lovr.filesystem.write("Shaders/vertex_art/processed.vert", prepared_shader) -- not working?
+    vertex_art.shader = lovr.graphics.newShader(prepared_shader, "Shaders/vertex_art/vertex_art.frag", {})
 end
 
 function vertex_art:load(pass)

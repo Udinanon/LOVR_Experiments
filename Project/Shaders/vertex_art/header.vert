@@ -65,10 +65,6 @@ Constants {
     uniform vec4 background;
     uniform float time;
     uniform float vertexCount;
-    //uniform sampler2D volume;
-    //uniform sampler2D sound;
-    //uniform sampler2D floatSound;
-    //uniform sampler2D touch;
     uniform vec2 soundRes;
     uniform float _dontUseDirectly_pointSize;
 
