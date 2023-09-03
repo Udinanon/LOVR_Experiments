@@ -74,5 +74,11 @@ Constants {
 
 };
 
+//layout(set = 2, binding = 0) uniform sampler touch;
+layout(set = 2, binding = 0) uniform texture2D touch;
+layout(set = 2, binding = 1) uniform texture2D volume;
+layout(set = 2, binding = 2) uniform texture2D sound;
+layout(set = 2, binding = 3) uniform texture2D floatSound;
+
 // this is to make it compatible in syntax
 float vertexId = gl_VertexIndex;

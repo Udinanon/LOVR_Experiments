@@ -1,7 +1,7 @@
 // original code: https://www.vertexshaderart.com/art/rZcr6zk3jJKzwJ2mD
 // thanks gman
-varying vec4 v_color;
-#define PI radians(180.0)
+// varying vec4 v_color;
+//#define PI radians(180.0)
 
 vec3 hsv2rgb(vec3 c) {
   c = vec3(c.x, clamp(c.yz, 0.0, 1.0));
@@ -112,7 +112,7 @@ void getQuadPoint(const float quadId, const float pointId, float thickness, vec2
 
 #define POINTS_PER_LINE 1800.
 #define QUADS_PER_LINE (POINTS_PER_LINE / 6.)
-void main() {
+vec4 lovrmain() {
   float lineId = floor(vertexId / POINTS_PER_LINE);
   float quadCount = POINTS_PER_LINE / 6.; 
   float pointId = mod(vertexId, 6.);
@@ -120,8 +120,8 @@ void main() {
   vec3 pos;
   vec2 uv;
   
-  float snd0 = texture2D(sound, vec2(0.13 + lineId * 0.05, quadId / quadCount * 0.01)).a;
-  float snd1 = texture2D(sound, vec2(0.14 + lineId * 0.05, quadId / quadCount * 0.01)).a;
+  float snd0 = getPixel(sound, vec2(0.13 + lineId * 0.05, quadId / quadCount * 0.01)).a;
+  float snd1 = getPixel(sound, vec2(0.14 + lineId * 0.05, quadId / quadCount * 0.01)).a;
   
   getQuadPoint(quadId * 0.02 + time * 3.1 * (lineId + 1.), pointId, pow(snd0, 5.0) * 0.25, vec2(pow(snd0, 2.), pow(snd1, 2.0)), pos, uv);  
   
@@ -139,4 +139,5 @@ void main() {
   float val = 1.;
   v_color = vec4(hsv2rgb(vec3(hue, sat, val)), quadId / quadCount);
   v_color = vec4(v_color.rgb * v_color.a, v_color.a);
+  return Projection * View * Transform * gl_Position;
 }
