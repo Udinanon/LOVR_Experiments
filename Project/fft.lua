@@ -43,12 +43,12 @@ function complex.__mt.__index.magnitude(self)
     return magnitude
 end
 
-local fft = {}
+local FFT = {}
 
 ---Compute FFT of COMPLEX number table
 ---@param vector table
 ---@return table fft_vector
-function fft.fft(vector)
+function FFT.fft(vector)
     local len = #vector
     -- Base case
     if len <= 1 then
@@ -61,8 +61,8 @@ function fft.fft(vector)
         even[#even+1] = vector[i+1]
     end
     -- Conquer
-    fft.fft(odd)
-    fft.fft(even)
+    FFT.fft(odd)
+    FFT.fft(even)
     -- Combine
     for k = 1, len / 2 do
         local t = even[k] * complex.expi(-2 * math.pi * (k - 1) / len)
@@ -75,7 +75,7 @@ end
 ---Convert table of Real numbers to Complex equivalent
 ---@param real_vector table
 ---@return table complex_vector
-function fft._to_complex(real_vector)
+function FFT._to_complex(real_vector)
     local complex_vector={}
     for i,r in ipairs(real_vector) do
         complex_vector[i]=complex.new(r)
@@ -83,7 +83,7 @@ function fft._to_complex(real_vector)
     return complex_vector
 end
 
-function fft._vector_magnitude(complex_vector)
+function FFT._vector_magnitude(complex_vector)
     local magnitude_vector = {}
     for i, c in ipairs(complex_vector) do
         magnitude_vector[i] = c:magnitude()
@@ -94,13 +94,27 @@ end
 ---Compute FFT of real valued table
 ---@param real_vector table
 ---@return table fft_vector
-function fft.real_fft(real_vector)
+function FFT.real_fft(real_vector)
     assert(type(real_vector)=="table", "The vector must be a table!")
-    local complex_vector = fft._to_complex(real_vector)
-    local fftd_complex = fft.fft(complex_vector)
-    local result = fft._vector_magnitude(fftd_complex)
+    local complex_vector = FFT._to_complex(real_vector)
+    local fftd_complex = FFT.fft(complex_vector)
+    local result = FFT._vector_magnitude(fftd_complex)
     return result
 end
 
+function FFT._byte_normalize(vector)
+    local max_val = math.max(unpack(vector))
+    local min_val = math.min(unpack(vector))
+    for i, v in ipairs(vector) do
+        vector[i] = math.floor(((vector[i] - min_val) / max_val) * 255)
+    end
+    return vector
+end
 
-return fft
+function FFT.byte_real_fft(samples)
+    local result = FFT.real_fft(samples)
+    local normalized_result = FFT._byte_normalize(result)
+    return normalized_result
+end
+
+return FFT

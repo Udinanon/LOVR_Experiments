@@ -1,5 +1,7 @@
 local vertex_art = {}
 
+vertex_art.FFT = require("fft")
+
 ---TODO:
 -- Preprocess shaders to ensure comatibility with minimal manual editing
 -- Reorder code to minimize GPU actions
@@ -25,18 +27,39 @@ end
 
 
 function vertex_art:init()
-    local shader_file = "Shaders/vertex_art/vs4.vert"
-    local prepared_shader = self:prepare_shader(shader_file)
+    vertex_art.shader_file = "Shaders/vertex_art/wave_vs.vert"
+    local prepared_shader = self:prepare_shader(vertex_art.shader_file)
     print(prepared_shader)
     lovr.filesystem.write("Shaders/vertex_art/processed.vert", prepared_shader) -- not working?
     vertex_art.shader = lovr.graphics.newShader(prepared_shader, "Shaders/vertex_art/vertex_art.frag", {})
+    vertex_art.music = lovr.data.newSound(
+        "Assets/digboy - Ed Wrecked (Ruined By digboy) - 02 Touch & Go & Rinse & Repeat.ogg",
+        true)
+    vertex_art.fft_samples = 1024
+    vertex_art.time_samples = 240
+    vertex_art.sample_rate = vertex_art.music:getSampleRate()
+    vertex_art.frame_size = vertex_art.sample_rate / 60
+    vertex_art.audio_offset = 0
+    vertex_art.sound_image = lovr.data.newImage(vertex_art.time_samples, vertex_art.fft_samples, "r8")
+    -- sound has values 0-255 linearly
+    vertex_art.sound_texture = lovr.graphics.newTexture(vertex_art.sound_image,
+        { format = "r8", linear = true, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
 end
 
 function vertex_art:load(pass)
-    local fft_samples = 256
-    local sound_texture = lovr.graphics.newTexture(fft_samples, 240,
-        { format = "rgba8", linear = true, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
-    local float_sound_texture = lovr.graphics.newTexture(fft_samples, 240,
+    vertex_art.audio_offset = vertex_art.audio_offset + lovr.headset.getDeltaTime()
+    for x = 1, vertex_art.time_samples do 
+        local sound_buf, _ = vertex_art.music:getFrames(vertex_art.fft_samples, vertex_art.audio_offset + vertex_art.frame_size*(x-1))
+        local byte_fft = vertex_art.FFT.byte_real_fft(sound_buf)
+        for y = 1, vertex_art.fft_samples do
+            vertex_art.sound_image:setPixel(x-1, y-1, byte_fft[y])
+        end
+    end
+
+-- empty image
+    --local sound_texture = lovr.graphics.newTexture(fft_samples, 240,        { format = "r8", linear = true, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
+    -- floatSound instad uses negative decibels, which is bullshit
+    local float_sound_texture = lovr.graphics.newTexture(vertex_art.fft_samples, 240,
         { format = "rgba32f", linear = true, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
     local volume_texture = lovr.graphics.newTexture(4, 240,
         { format = "rgba8", linear = true, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
@@ -49,21 +72,22 @@ function vertex_art:load(pass)
     pass:send("mouse", vec2(0, 0));
     pass:send("background", vec4(1, 1, 1, 1));
     pass:send("touch", touch_texture)
-    pass:send("sound", sound_texture)
+    pass:send("sound", vertex_art.sound_texture)
     pass:send("floatSound", float_sound_texture)
     pass:send("volume", volume_texture)
-    --pass:send(" sampler2D " "volume", );
-    --pass:send(" sampler2D " "sound", );
-    --pass:send(" sampler2D " "floatSound", );
-    --pass:send(" sampler2D " "touch", );
     pass:send("soundRes", vec2(1000, 1000));
     pass:send("_dontUseDirectly_pointSize", 1.);
 end
 
 
+function vertex_art.update_textures(transfer_pass)
+    transfer_pass:copy(vertex_art.sound_image, vertex_art.sound_texture)
+end
 
-function vertex_art:demo(pass)
+
+function vertex_art:demo(pass, transfer_pass)
     vertex_art:load(pass)
+    vertex_art.update_textures(transfer_pass)
     local indexCount = 1000
     pass:send("vertexCount", indexCount);
 
