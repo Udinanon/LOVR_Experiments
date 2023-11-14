@@ -1,10 +1,10 @@
+
 local vertex_art = {}
 
 vertex_art.FFT = require("fft")
 
 ---TODO:
--- Reorder code to minimize GPU actions
--- Make a trurly 3D shader
+-- Fix issues with soud data
 -- Showcase and share
 -- Contact Gman
 
@@ -25,11 +25,13 @@ end
 
 
 function vertex_art:init()
-    vertex_art.shader_file = "Shaders/vertex_art/slash.vert"
+    vertex_art.shader_file = "Shaders/vertex_art/wave.vert"
     local prepared_shader = self:prepare_shader(vertex_art.shader_file)
     print(prepared_shader)
     lovr.filesystem.write("Shaders/vertex_art/processed.vert", prepared_shader) -- not working?
     vertex_art.shader = lovr.graphics.newShader(prepared_shader, "Shaders/vertex_art/vertex_art.frag", {})
+
+    --vertex_art.shader = lovr.graphics.newShader("unlit", "Shaders/vertex_art/spectrogram.frag", {})
     vertex_art.music = lovr.data.newSound(
         "Assets/digboy - Ed Wrecked (Ruined By digboy) - 02 Touch & Go & Rinse & Repeat.ogg",
         true)
@@ -38,7 +40,7 @@ function vertex_art:init()
     vertex_art.sample_rate = vertex_art.music:getSampleRate()
     vertex_art.frame_size = vertex_art.sample_rate / 60
     vertex_art.audio_offset = 0
-    vertex_art.sound_image = lovr.data.newImage(vertex_art.time_samples, vertex_art.fft_samples, "rgba8")
+    vertex_art.sound_image = lovr.data.newImage(vertex_art.fft_samples, vertex_art.time_samples, "rgba8")
     -- sound has values 0-255 linearly
     vertex_art.sound_texture = lovr.graphics.newTexture(vertex_art.sound_image,
         { format = "rgba8", linear = false, samples = 1, mipmaps = false, usage = { "sample", "render", "transfer" } })
@@ -58,15 +60,19 @@ end
 function vertex_art:load(pass)
     --vertex_art.audio_offset = vertex_art.audio_offset + lovr.headset.getDeltaTime()
     vertex_art.audio_offset = vertex_art.audio_offset + vertex_art.frame_size
-    vertex_art.sound_image:paste(vertex_art.sound_image, 0, 0, 1, 0, vertex_art.time_samples - 1, vertex_art.fft_samples)
+    vertex_art.sound_image:paste(vertex_art.sound_image, 0, 0, 0, 1, vertex_art.fft_samples, vertex_art.time_samples - 1)
     --for x = 1, vertex_art.time_samples do
     local sound_buf, _ = vertex_art.music:getFrames(vertex_art.fft_samples,
             vertex_art.audio_offset )
     --+ vertex_art.frame_size * (vertex_art.time_samples- 1)
     local byte_fft = vertex_art.FFT.byte_real_fft(sound_buf)
-    for y = 1, vertex_art.fft_samples do
-        vertex_art.sound_image:setPixel(vertex_art.time_samples - 1, y - 1, byte_fft[y], byte_fft[y], byte_fft[y],
-            byte_fft[y])
+    local factor = 100 --255 -- even rgba8 textures are [0, 1]
+    for x = 1, vertex_art.fft_samples do
+        vertex_art.sound_image:setPixel(x - 1, vertex_art.time_samples - 1,
+        byte_fft[x] / factor, 
+        byte_fft[x] / factor,
+        byte_fft[x] / factor,
+        byte_fft[x] / factor)
     end
     --end
 
@@ -102,7 +108,7 @@ function vertex_art:demo(pass, transfer_pass)
 
     vertex_art:load(pass)
     vertex_art.update_textures(transfer_pass)
-    local indexCount = 1000
+    local indexCount = 10000
     pass:send("vertexCount", indexCount);
 
     
@@ -125,7 +131,7 @@ function vertex_art:demo(pass, transfer_pass)
     --pass:circle(mat4(vec3(1, 1, 1)), "line", 0, 2 * math.pi, indexCount)
     pass:setShader()
     pass:setMaterial(material)
-    pass:cube()
+    pass:cube(vec3(0, 1, 0))
     pass:setMaterial()
 end
 
